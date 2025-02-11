@@ -1,0 +1,48 @@
+package boxprover
+
+import scala.util.parsing.combinator.PackratParsers
+
+class PLParser extends PackratParsers {
+  import PLFormula.*
+
+  override type Elem = PLToken
+
+  def atomexp: Parser[Atom] = accept("atom", { case PLToken.Atom(c) => Atom(c) })
+  def contrexp: Parser[Contradiction] = elem(PLToken.Contradiction()) ^^^ Contradiction()
+  def tautexp: Parser[Tautology] = elem(PLToken.Tautology()) ^^^ Tautology()
+
+  def simpleexps: Parser[PLFormula] = atomexp | tautexp | contrexp
+
+  def c: Parser[PLFormula] = 
+    simpleexps |
+    ((PLToken.Not() ~ c) ^^ { case _ ~ phi => Not(phi) }) |
+    withParens(formula)
+
+  def b: Parser[PLFormula] = {
+    ((c ~ rep((PLToken.And() | PLToken.Or()) ~ c)) ^^ { case phi ~ ls => 
+      ls.foldLeft(phi: PLFormula) {
+        case (form, PLToken.And() ~ psi) => And(form, psi)
+        case (form, PLToken.Or() ~ psi) => Or(form, psi)
+        case _ => ???
+      }
+    })
+  }
+
+  def a: Parser[PLFormula] =
+    ((rep(b ~ PLToken.Implies()) ~ b) ^^ {  case ls ~ phi =>
+      ls.foldRight(phi) {
+        case (psi ~ _, form) => Implies(psi, form)
+      }
+    })
+
+  def withParens[T](parser: Parser[T]) = PLToken.LeftParen() ~> parser <~ PLToken.RightParen()
+  
+  def formula: Parser[PLFormula] = a
+
+  def apply(input: List[PLToken]): PLFormula =
+    phrase(formula)(TokenReader(input)) match {
+      case p @ (NoSuccess(_, _) | Failure(_, _) | Error(_, _))  => 
+        throw new RuntimeException(p.toString)
+      case Success(result, _) => result
+    }
+}
