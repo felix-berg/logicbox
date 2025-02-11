@@ -20,7 +20,7 @@ object PLValidator {
   
   private def generateValuations(vars: Set[Char]): Iterator[Map[Char, Boolean]] =
     val sadMap = vars.map(c => (c, false)).toMap
-    vars.subsets.map(set => 
+    vars.subsets.map(set =>
       set.foldLeft(sadMap) { case (m, c) => m + (c -> true) }
     )
 
