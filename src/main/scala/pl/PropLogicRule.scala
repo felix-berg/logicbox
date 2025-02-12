@@ -376,4 +376,46 @@ object PropLogicRule {
       }}
     }
   }
+
+  case class ModusTollens() extends PropLogicRule {
+    private def checkImpl(formula: PLFormula, r0: PLFormula, r1: PLFormula): List[Mismatch] = {
+      {
+        formula match {
+          case Not(_) => Nil
+          case _ => List(FormulaDoesntMatchRule("must be a negation"))
+        }
+      } ++ {
+        r0 match {
+          case Implies(_, _) => Nil
+          case _ => List(ReferenceDoesntMatchRule(0, "must be an implication"))
+        }
+      } ++ {
+        r1 match {
+          case Not(_) => Nil
+          case _ => List(ReferenceDoesntMatchRule(1, "must be a negation"))
+        }
+      } ++ {
+        (formula, r0, r1) match {
+          case (Not(phi2), Implies(phi1, psi1), Not(psi2)) => {
+            if (phi2 != phi1) List(
+              FormulaDoesntMatchReference(0, "must be negation of left-hand side of implication")
+            ) else Nil
+          } ++ {
+            if (psi1 != psi2) List(
+              ReferencesMismatch(List(0, 1), "second reference must be the negation of the right-hand side of the implication")
+            ) else Nil
+          }
+          case _ => Nil
+        }
+      }
+    }
+
+    override def check(formula: PLFormula, refs: List[ProofStep[PLFormula]]): List[Mismatch] = {
+      checkCorrectNumberOfRefs(refs, 2) ++ { extractFormulas(refs) match {
+        case Left(List(r0, r1)) => checkImpl(formula, r0, r1)
+        case Right(mms) => mms
+        case _ => Nil
+      }}
+    }
+  }
 }
