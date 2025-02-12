@@ -25,7 +25,6 @@ object PLFormula {
   case class Not(phi: PLFormula) extends PLFormula
 }
 
-
 sealed abstract class PLToken
 
 object PLToken {
