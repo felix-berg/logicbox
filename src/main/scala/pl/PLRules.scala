@@ -38,27 +38,53 @@ object PLRules {
       case And(lhs, rhs) => side match {
         case Side.Left => 
           if (lhs != formula) List(
-            FormulaDoesntMatchReferences(List(0), "formula doesn't match left-hand side")
+            FormulaDoesntMatchReference(0, "formula doesn't match left-hand side")
           ) else Nil
             
         case Side.Right =>
           if (rhs != formula) List(
-            FormulaDoesntMatchReferences(List(0), "formula doesn't match right-hand side")
+            FormulaDoesntMatchReference(0, "formula doesn't match right-hand side")
           ) else Nil
       }
       
       case _ => List(
-        ReferenceDoesntMatchRule(0, "should be conjuction (and)")
+        ReferenceDoesntMatchRule(0, "must be conjuction (and)")
       )
     }
 
     override def check(formula: PLFormula, refs: List[ProofStep[PLFormula]]): List[Mismatch] = {
       checkCorrectNumberOfRefs(refs, 1) ++ {
         (extractFormulas(refs): @unchecked) match {
-          case Left(ref :: _) =>
+          case Left(List(ref)) =>
             checkMatchesRef(formula, ref)
           case Right(mismatches) => 
             mismatches
+        }
+      }
+    }
+  }
+
+  case class AndIntro() extends Rule[PLFormula] {
+    private def checkMatchesRef(formula: PLFormula, r0: PLFormula, r1: PLFormula): List[Mismatch] = 
+      formula match {
+        case And(phi, psi) => List(
+          (if (phi != r0) List(
+            FormulaDoesntMatchReference(0, "left-hand side of formula must match")
+          ) else Nil)
+          ++
+          (if (psi != r1) List(
+            FormulaDoesntMatchReference(1, "right-hand side of formula must match")
+          ) else Nil)
+        ).flatten
+        
+        case _ => List(FormulaDoesntMatchRule("must be a conjunction (and)"))
+      }
+
+    override def check(formula: PLFormula, refs: List[ProofStep[PLFormula]]): List[Mismatch] = {
+      checkCorrectNumberOfRefs(refs, 2) ++ {
+        (extractFormulas(refs): @unchecked) match {
+          case Left(List(r0, r1)) => checkMatchesRef(formula, r0, r1)
+          case Right(mismatches) => mismatches
         }
       }
     }
@@ -68,21 +94,21 @@ object PLRules {
     private def checkAgainstRef(formula: PLFormula, ref: PLFormula): List[Mismatch] = (side, formula) match {
       case (Side.Left, Or(lhs, _)) => 
         if (lhs != ref) List(
-          FormulaDoesntMatchReferences(List(0), "left-hand side of formula must match reference")
+          FormulaDoesntMatchReference(0, "left-hand side of formula must match reference")
         ) else Nil
+
       case (Side.Right, Or(_, rhs)) =>
         if (rhs != ref) List(
-          FormulaDoesntMatchReferences(List(0), "right-hand side of formula must match reference")
+          FormulaDoesntMatchReference(0, "right-hand side of formula must match reference")
         ) else Nil
-      case _ => List(
-        FormulaDoesntMatchRule("formula must be a disjunction (or)")
-      )
-    Right
+
+      case _ => List(FormulaDoesntMatchRule("must be a disjunction (or)"))
+    }
 
     override def check(formula: PLFormula, refs: List[ProofStep[PLFormula]]): List[Mismatch] = {
       checkCorrectNumberOfRefs(refs, 1) ++ {
         (extractFormulas(refs): @unchecked) match {
-          case Left(ref :: _) => checkAgainstRef(formula, ref)
+          case Left(List(ref)) => checkAgainstRef(formula, ref)
           case Right(mismatches) => 
             mismatches
         }

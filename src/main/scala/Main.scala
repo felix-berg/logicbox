@@ -58,7 +58,7 @@ object TestPropLogic {
       val ref = stub("q and (p -> v or r)")
       val l = line("p", leftRule, List(ref))
       leftRule.check(l.formula, List(ref)) match {
-        case List(FormulaDoesntMatchReferences(List(0), _)) =>
+        case List(FormulaDoesntMatchReference(0, _)) =>
         case l => println(s"wow: $l")
       }
     }
@@ -83,7 +83,7 @@ object TestPropLogic {
       val ref = stub("q and (p -> v or r)")
       val l = line("p", leftRule, List(ref))
       leftRule.check(l.formula, List(ref)) match {
-        case List(FormulaDoesntMatchReferences(List(0), _)) =>
+        case List(FormulaDoesntMatchReference(0, _)) =>
         case l => println(s"wow: $l")
       }
     }
@@ -100,7 +100,7 @@ object TestPropLogic {
       val ref = stub("p")
       val l = line("q or (p -> q -> v)", leftRule, List(ref))
       leftRule.check(l.formula, l.refs) match {
-        case List(FormulaDoesntMatchReferences(List(0), _)) =>
+        case List(FormulaDoesntMatchReference(0, _)) =>
         case l => println(s"wow: $l")
       }
     }
@@ -122,7 +122,7 @@ object TestPropLogic {
       val ref = stub("p")
       val l = line("(p -> q -> v) or q", rightRule, List(ref))
       rightRule.check(l.formula, l.refs) match {
-        case List(FormulaDoesntMatchReferences(List(0), _)) =>
+        case List(FormulaDoesntMatchReference(0, _)) =>
         case l => println(s"wow: $l")
       }
     }
@@ -132,6 +132,44 @@ object TestPropLogic {
       rightRule.check(l.formula, l.refs) match {
         case List(FormulaDoesntMatchRule(_)) =>
         case l => println(s"wow: $l")
+      }
+    }
+  }
+
+  def andIntro: Unit = {
+    val rule = AndIntro()
+    val List(r0, r1) = List("p", "q").map(stub)
+    {
+      val l = line("p and q", rule, List(r0, r1))
+      assertEq(rule.check(l.formula, l.refs), Nil)
+    }
+
+    {
+      val l = line("r and (s or v)", rule, List(r0, r1))
+      val mismatches = rule.check(l.formula, l.refs)
+      mismatches.exists {
+        case FormulaDoesntMatchReference(0, _) => true
+        case _ => false
+      } 
+      mismatches.exists {
+        case FormulaDoesntMatchReference(1, _) => true
+        case _ => false
+      }
+    }
+
+    {
+      val l = line("r and q", rule, List(r0, r1))
+      rule.check(l.formula, l.refs) match {
+        case List(FormulaDoesntMatchReference(0, _)) => 
+        case _ => print(s"wow: $l")
+      }
+    }
+
+    {
+      val l = line("p and r", rule, List(r0, r1))
+      rule.check(l.formula, l.refs) match {
+        case List(FormulaDoesntMatchReference(1, _)) => 
+        case _ => print(s"wow: $l")
       }
     }
   }
