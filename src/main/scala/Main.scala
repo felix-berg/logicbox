@@ -487,6 +487,26 @@ object TestPropLogic {
     }
   }
 
+  def notNotIntro = {
+    val rule = NotNotIntro()
+    {
+      val ref = stub("q")
+      val l = line("q", rule, List(ref))
+      rule.check(l.formula, l.refs) match {
+        case List(FormulaDoesntMatchRule(_)) => 
+        case s => println(s"huh: $s")
+      }
+    }
+    {
+      val ref = stub("q")
+      val l = line("not not p", rule, List(ref))
+      rule.check(l.formula, l.refs) match {
+        case List(FormulaDoesntMatchReference(0, _)) =>
+        case s => println(s"huh: $s")
+      }
+    }
+  }
+
   def fullProof = {
     val l1 = line("p -> q", Premise(), Nil)
     val l2 = line("r -> s", Premise(), Nil)

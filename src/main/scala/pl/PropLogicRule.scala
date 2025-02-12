@@ -366,7 +366,7 @@ object PropLogicRule {
       checkCorrectNumberOfRefs(refs, 1) ++ { extractFormulas(refs) match {
         case Left(List(Not(Not(phi)))) => 
           if (formula != phi) List(
-            FormulaDoesntMatchReference(0, "must equal the reference, but with the two outlining negations removed")
+            FormulaDoesntMatchReference(0, "must equal the reference, but with the two outer negations removed")
           ) else Nil
         case Left(List(_)) => List(
           ReferenceDoesntMatchRule(0, "must be a negation of a negation")
@@ -413,6 +413,28 @@ object PropLogicRule {
     override def check(formula: PLFormula, refs: List[ProofStep[PLFormula]]): List[Mismatch] = {
       checkCorrectNumberOfRefs(refs, 2) ++ { extractFormulas(refs) match {
         case Left(List(r0, r1)) => checkImpl(formula, r0, r1)
+        case Right(mms) => mms
+        case _ => Nil
+      }}
+    }
+  }
+
+  case class NotNotIntro() extends PropLogicRule {
+    private def checkImpl(formula: PLFormula, ref: PLFormula): List[Mismatch] = {
+      formula match {
+        case Not(Not(phi)) => 
+          if (phi != ref) List(
+            FormulaDoesntMatchReference(0, "must be ")
+          ) else Nil
+        case _ => List(
+          FormulaDoesntMatchRule("must equal the reference, but with the two outer negations removed")
+        )
+      }
+    }
+
+    override def check(formula: PLFormula, refs: List[ProofStep[PLFormula]]): List[Mismatch] = {
+      checkCorrectNumberOfRefs(refs, 1) ++ { extractFormulas(refs) match {
+        case Left(List(ref)) => checkImpl(formula, ref)
         case Right(mms) => mms
         case _ => Nil
       }}
