@@ -360,4 +360,20 @@ object PropLogicRule {
       }}
     }
   }
+
+  case class NotNotElim() extends PropLogicRule {
+    override def check(formula: PLFormula, refs: List[ProofStep[PLFormula]]): List[Mismatch] = {
+      checkCorrectNumberOfRefs(refs, 1) ++ { extractFormulas(refs) match {
+        case Left(List(Not(Not(phi)))) => 
+          if (formula != phi) List(
+            FormulaDoesntMatchReference(0, "must equal the reference, but with the two outlining negations removed")
+          ) else Nil
+        case Left(List(_)) => List(
+          ReferenceDoesntMatchRule(0, "must be a negation of a negation")
+        )
+        case Right(mms) => mms
+        case _ => Nil
+      }}
+    }
+  }
 }
