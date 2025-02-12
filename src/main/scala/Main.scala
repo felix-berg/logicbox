@@ -5,7 +5,7 @@ import java.lang.reflect.Modifier
 import java.lang.ref.Reference
 
 object TestPropLogic {
-  import boxprover.PLRules.*
+  import boxprover.PropLogicRule.*
 
   private val lexer = PLLexer()
   private val parser = PLParser()
@@ -143,6 +143,77 @@ object TestPropLogic {
     }
   }
 
+  def orElim: Unit = {
+    val rule = OrElim()
+
+    {
+      // r0 is not line
+      val (r0, r1, r2) = (boxStub("p or q", "s"), boxStub("p", "s"), boxStub("q", "s"))
+      val l = line("s", rule, List(r0, r1, r2))
+      rule.check(l.formula, l.refs) match {
+        case List(ReferenceShouldBeLine(0, _)) =>
+        case l => println(s"wow: $l")
+      }
+    }
+
+    {
+      // r1 is not box
+      val (r0, r1, r2) = (stub("p or q"), stub("s"), boxStub("q", "s"))
+      val l = line("s", rule, List(r0, r1, r2))
+      rule.check(l.formula, l.refs) match {
+        case List(ReferenceShouldBeBox(1, _)) =>
+        case l => println(s"wow: $l")
+      }
+    }
+
+    {
+      // r2 is not box
+      val (r0, r1, r2) = (stub("p or q"), boxStub("p", "s"), stub("q"))
+      val l = line("s", rule, List(r0, r1, r2))
+      rule.check(l.formula, l.refs) match {
+        case List(ReferenceShouldBeBox(2, _)) =>
+        case l => println(s"wow: $l")
+      }
+    }
+  
+    {
+      val (r0, r1, r2) = (stub("p -> q"), boxStub("p", "s"), boxStub("q", "s"))
+      val l = line("s", rule, List(r0, r1, r2))
+      rule.check(l.formula, l.refs) match {
+        case List(ReferenceDoesntMatchRule(0, _)) =>
+        case l => println(s"wow: $l")
+      }
+    }
+
+    {
+      val refs = List(stub("p or q"), boxStub("p", "s"), boxStub("q", "d"))
+      val l = line("s", rule, refs)
+      val mms = rule.check(l.formula, l.refs)
+      val good = mms.exists {
+        case ReferencesMismatch(List(1, 2), _) => true
+        case _ => false
+      } && mms.exists {
+        case FormulaDoesntMatchReference(2, _) => true
+        case _ => false
+      }
+      if (!good) println(s"wow: $mms")
+    }
+
+    {
+      val refs = List(stub("p or q"), boxStub("p", "d"), boxStub("q", "s"))
+      val l = line("s", rule, refs)
+      val mms = rule.check(l.formula, l.refs)
+      val good = mms.exists {
+        case ReferencesMismatch(List(1, 2), _) => true
+        case _ => false
+      } && mms.exists {
+        case FormulaDoesntMatchReference(1, _) => true
+        case _ => false
+      }
+      if (!good) println(s"wow: $mms")
+    }
+  }
+
   def andIntro: Unit = {
     val rule = AndIntro()
     val List(r0, r1) = List("p", "q").map(stub)
@@ -185,7 +256,7 @@ object TestPropLogic {
     val emptybox = ProofBox(info = (), proof = (Nil: List[ProofStep[PLFormula]]))
     {
       val box = ProofBox(info = (), proof = (Nil: List[ProofStep[PLFormula]]))
-      PLRules.extractAssumptionConclusion(box) match {
+      PropLogicRule.extractAssumptionConclusion(box) match {
         case Right(List(MiscellaneousMismatch(_))) => 
         case s => println(s"huh: $s")
       }
@@ -194,7 +265,7 @@ object TestPropLogic {
       val assmp = ProofLine(parse("p"), Premise(), Nil) // not assumption
       val concl = stub("q")
       val box = ProofBox(info = (), proof = List(assmp, concl))
-      PLRules.extractAssumptionConclusion(box) match {
+      PropLogicRule.extractAssumptionConclusion(box) match {
         case Right(List(MiscellaneousMismatch(_))) => 
         case s => println(s"huh: $s")
       }
@@ -204,7 +275,7 @@ object TestPropLogic {
         emptybox,
         stub("q")
       ))
-      PLRules.extractAssumptionConclusion(box) match {
+      PropLogicRule.extractAssumptionConclusion(box) match {
         case Right(List(MiscellaneousMismatch(_))) => 
         case s => println(s"huh: $s")
       }
@@ -214,7 +285,7 @@ object TestPropLogic {
         ProofLine(parse("p"), Assumption(), Nil),
         emptybox
       ))
-      PLRules.extractAssumptionConclusion(box) match {
+      PropLogicRule.extractAssumptionConclusion(box) match {
         case p @ Right(List(MiscellaneousMismatch(_))) => 
         case s => println(s"huh: $s")
       }
@@ -247,6 +318,13 @@ object TestPropLogic {
         case s => println(s"huh: $s")
       }
     }
+    {
+      val l = line("p -> q", rule, List(stub("q")))
+      rule.check(l.formula, l.refs) match {
+        case List(ReferenceShouldBeBox(0, _)) =>
+        case s => println(s"huh: $s")
+      }
+    }
   }
 
   def implicationElim = {
@@ -272,6 +350,34 @@ object TestPropLogic {
       val l = line("q", rule, List(r0, r1))
       rule.check(l.formula, l.refs) match {
         case List(ReferenceDoesntMatchRule(1, _)) => 
+        case s => println(s"huh: $s")
+      }
+    }
+  }
+
+  def notIntro = {
+    val rule = NotIntroduction()
+    {
+      val box = boxStub("p", "q")
+      val l = line("not p", rule, List(box))
+      rule.check(l.formula, l.refs) match {
+        case List(ReferenceDoesntMatchRule(0, _)) => 
+        case s => println(s"huh: $s")
+      }
+    }
+    {
+      val box = boxStub("p", "false")
+      val l = line("not q", rule, List(box))
+      rule.check(l.formula, l.refs) match {
+        case List(FormulaDoesntMatchReference(0, _)) =>
+        case s => println(s"huh: $s")
+      }
+    }
+    {
+      val box = boxStub("p", "false")
+      val l = line("p", rule, List(box))
+      rule.check(l.formula, l.refs) match {
+        case List(FormulaDoesntMatchRule(_)) =>
         case s => println(s"huh: $s")
       }
     }

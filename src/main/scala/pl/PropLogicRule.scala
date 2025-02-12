@@ -1,6 +1,7 @@
 package boxprover
 
-object PLRules {
+sealed trait PropLogicRule extends Rule[PLFormula]
+object PropLogicRule {
   import PLFormula.*
 
   enum Side { case Left; case Right }
@@ -33,14 +34,14 @@ object PLRules {
       List(WrongNumberOfReferences(exp, refs.length))
     else Nil
 
-  class NullRule extends Rule[PLFormula] {
+  class NullRule extends PropLogicRule {
     def check(formula: PLFormula, refs: List[ProofStep[PLFormula]]): List[Mismatch] = Nil
   }
 
   case class Premise() extends NullRule
   case class Assumption() extends NullRule
 
-  case class AndElim(side: Side) extends Rule[PLFormula] {
+  case class AndElim(side: Side) extends PropLogicRule {
     private def checkMatchesRef(formula: PLFormula, ref: PLFormula): List[Mismatch] = ref match {
       case And(lhs, rhs) => side match {
         case Side.Left => 
@@ -71,7 +72,7 @@ object PLRules {
     }
   }
 
-  case class AndIntro() extends Rule[PLFormula] {
+  case class AndIntro() extends PropLogicRule {
     private def checkMatchesRef(formula: PLFormula, r0: PLFormula, r1: PLFormula): List[Mismatch] = 
       formula match {
         case And(phi, psi) => List(
@@ -97,7 +98,7 @@ object PLRules {
     }
   }
 
-  case class OrIntro(side: Side) extends Rule[PLFormula] {
+  case class OrIntro(side: Side) extends PropLogicRule {
     private def checkAgainstRef(formula: PLFormula, ref: PLFormula): List[Mismatch] = (side, formula) match {
       case (Side.Left, Or(lhs, _)) => 
         if (lhs != ref) List(
@@ -120,6 +121,82 @@ object PLRules {
             mismatches
         }
       }
+    }
+  }
+
+  case class OrElim() extends PropLogicRule {
+    private def checkAgainstRefs(
+      formula: PLFormula, r0: PLFormula, 
+      r1: (PLFormula, PLFormula), r2: (PLFormula, PLFormula)
+    ): List[Mismatch] = {
+      val (as1, cl1) = r1
+      val (as2, cl2) = r2
+
+      {
+        if (formula != cl1) List(
+          FormulaDoesntMatchReference(1, "must match last line of box")
+        ) else Nil
+      } ++ {
+        if (formula != cl2) List(
+          FormulaDoesntMatchReference(2, "must match last line of box")
+        ) else Nil
+      } ++ {
+        if (cl1 != cl2) List(
+          ReferencesMismatch(List(1, 2), "last lines of boxes must match") 
+        ) else Nil
+      } ++ { 
+        r0 match {
+          case Or(lhs, rhs) => {
+            if (as1 != lhs) List(
+              ReferencesMismatch(List(0, 1), "left-hand side must match assumption")
+            ) else Nil
+          } ++ {
+            if (as2 != rhs) List(
+              ReferencesMismatch(List(0, 2), "right-hand side must match assumption")
+            ) else Nil
+          }
+          case _ => List(
+            ReferenceDoesntMatchRule(0, "must be a disjunction (or)")
+          )
+        }
+      }
+    }
+
+    def check(formula: PLFormula, refs: List[ProofStep[PLFormula]]): List[Mismatch] = {
+      def verifyTypes(r0: ProofStep[PLFormula], r1: ProofStep[PLFormula], r2: ProofStep[PLFormula]): List[Mismatch] = {
+        { r0 match {
+          case ProofLine(_, _, _) => Nil
+          case _ => List(ReferenceShouldBeLine(0))
+        }} ++ List((r1, 1), (r2, 2)).flatMap {
+          case (ref, idx) => ref match {
+            case box: ProofBox[_, _] => Nil
+            case _ => List(ReferenceShouldBeBox(idx))
+          }
+        }
+      }
+
+      checkCorrectNumberOfRefs(refs, 3) ++ { refs match {
+        case List(r0, r1, r2) => 
+          verifyTypes(r0, r1, r2) ++ ((r0, r1, r2) match {
+            case (
+              ProofLine(r0: PLFormula @unchecked, _, _),
+              r1: ProofBox[PLFormula, _] @unchecked,
+              r2: ProofBox[PLFormula, _] @unchecked
+            ) => 
+              List(r1, r2).map(extractAssumptionConclusion) match {
+                case List(Left(p1), Left(p2)) => 
+                  checkAgainstRefs(formula, r0, p1, p2)
+
+                case List(Right(mms1), Right(mms2)) => mms1 ++ mms2
+                case List(_, Right(mms)) => mms
+                case List(Right(mms), _) => mms
+
+                case _ => Nil
+              }
+            case _ => Nil
+          })
+        case _ => Nil
+      }}
     }
   }
 
@@ -155,7 +232,7 @@ object PLRules {
     }
   }
 
-  case class ImplicationIntro() extends Rule[PLFormula] {
+  case class ImplicationIntro() extends PropLogicRule {
     private def checkMatchesBox(formula: PLFormula, asmp: PLFormula, concl: PLFormula): List[Mismatch] = {
       formula match {
         case Implies(phi, psi) =>
@@ -180,13 +257,15 @@ object PLRules {
               case Right(mms) => mms
               case Left(asmp, concl) => checkMatchesBox(formula, asmp, concl)
             }
-          case _ => Nil
+          case _ => List(
+            ReferenceShouldBeBox(0)
+          )
         }
       }
     }
   }
 
-  case class ImplicationElim() extends Rule[PLFormula] {
+  case class ImplicationElim() extends PropLogicRule {
     private def checkMatchesRef(formula: PLFormula, r0: PLFormula, r1: PLFormula): List[Mismatch] = 
       r1 match {
         case Implies(from, to) => 
@@ -211,6 +290,35 @@ object PLRules {
             mismatches
         }
       }
+    }
+  }
+
+  case class NotIntroduction() extends PropLogicRule {
+    private def checkImpl(formula: PLFormula, asmp: PLFormula, concl: PLFormula): List[Mismatch] = {
+      {
+        if (concl != Contradiction()) List(
+          ReferenceDoesntMatchRule(0, "last line of box must be contradiction")
+        ) else Nil
+      } ++ { formula match {
+        case Not(phi) => 
+          if (phi != asmp) List(
+            FormulaDoesntMatchReference(0, "must be the negation of the assumption in the box")
+          ) else Nil
+        case _ => List(
+          FormulaDoesntMatchRule("must be a negation")
+        )
+      }
+    }}
+      
+    override def check(formula: PLFormula, refs: List[ProofStep[PLFormula]]): List[Mismatch] = {
+      checkCorrectNumberOfRefs(refs, 1) ++ { refs match {
+        case List(box: ProofBox[PLFormula, _] @unchecked) => 
+          extractAssumptionConclusion(box) match {
+            case Left(asmp, concl) => checkImpl(formula, asmp, concl)
+            case Right(mms) => mms
+          }
+        case _ => Nil
+      }}
     }
   }
 }
