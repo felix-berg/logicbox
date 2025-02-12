@@ -481,4 +481,16 @@ object PropLogicRule {
       }
     }
   }
+
+  case class Copy() extends PropLogicRule {
+    override def check(formula: PLFormula, refs: List[ProofStep[PLFormula]]): List[Mismatch] = {
+      checkCorrectNumberOfRefs(refs, 1) ++ { extractFormulas(refs) match {
+        case Left(List(ref)) if ref == formula => Nil
+        case Left(_) => List(
+          FormulaDoesntMatchReference(0, "must be an exact copy of reference")
+        )
+        case Right(mms) => mms
+      }}
+    }
+  }
 }

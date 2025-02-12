@@ -561,6 +561,18 @@ object TestPropLogic {
     }
   }
 
+  def copy = {
+    val rule = Copy()
+    {
+      val ref = stub("q")
+      val l = line("p", rule, List(ref))
+      rule.check(l.formula, l.refs) match {
+        case List(FormulaDoesntMatchReference(0, _)) =>
+        case s => println(s"huh: $s")
+      }
+    }
+  }
+
   def fullProof = {
     val l1 = line("p -> q", Premise(), Nil)
     val l2 = line("r -> s", Premise(), Nil)
@@ -584,6 +596,22 @@ object TestPropLogic {
     checkProof(proof).foreach {
       case (formula, mismatch) => println(s"$formula:\n $mismatch")
     }
+  }
+
+  def bigProof = {
+    val l1  = line("(p -> q) -> r", Premise(), Nil)
+    val l2  = line("s -> not p", Premise(), Nil)
+    val l3  = line("t", Premise(), Nil)
+    val l4  = line("(not s and t) -> q", Premise(), Nil)
+    val l5  = line("p or not p", LawOfExcludedMiddle(), Nil)
+
+    val l6  = line("p", Assumption(), Nil)
+    val l7  = line("not not p", NotNotIntro(), Nil)
+    val l8  = line("not s", ModusTollens(), List(l2, l7))
+    val l9  = line("not s and t", AndIntro(), List(l8, l3))
+    val l10 = line("q", ImplicationElim(), List(l9, l4))
+    val l11 = line("p", Assumption(), Nil)
+    // val l12 = line("q")
   }
 }
 
