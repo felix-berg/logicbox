@@ -293,7 +293,7 @@ object PropLogicRule {
     }
   }
 
-  case class NotIntroduction() extends PropLogicRule {
+  case class NotIntro() extends PropLogicRule {
     private def checkImpl(formula: PLFormula, asmp: PLFormula, concl: PLFormula): List[Mismatch] = {
       {
         if (concl != Contradiction()) List(
@@ -320,5 +320,30 @@ object PropLogicRule {
         case _ => Nil
       }}
     }
+  }
+
+  case class NotElim() extends PropLogicRule {
+    private def checkImpl(formula: PLFormula, r0: PLFormula, r1: PLFormula): List[Mismatch] = {
+      {
+        if (formula != Contradiction()) List(
+          FormulaDoesntMatchRule("must be contradiction")
+        ) else Nil
+      } ++ { r1 match {
+        case Not(phi) => 
+          if (r0 != phi) List(
+            ReferencesMismatch(List(0, 1), "second reference must be negation of first")
+          ) else Nil
+        case _ => List(
+          ReferenceDoesntMatchRule(1, "must be negation")
+        )
+      }}
+    }
+
+    override def check(formula: PLFormula, refs: List[ProofStep[PLFormula]]): List[Mismatch] = 
+      checkCorrectNumberOfRefs(refs, 2) ++ { extractFormulas(refs) match {
+        case Left(List(r0, r1)) => checkImpl(formula, r0, r1)
+        case Right(mms) => mms
+        case _ => Nil
+      }}
   }
 }

@@ -356,7 +356,7 @@ object TestPropLogic {
   }
 
   def notIntro = {
-    val rule = NotIntroduction()
+    val rule = NotIntro()
     {
       val box = boxStub("p", "q")
       val l = line("not p", rule, List(box))
@@ -376,6 +376,34 @@ object TestPropLogic {
     {
       val box = boxStub("p", "false")
       val l = line("p", rule, List(box))
+      rule.check(l.formula, l.refs) match {
+        case List(FormulaDoesntMatchRule(_)) =>
+        case s => println(s"huh: $s")
+      }
+    }
+  }
+
+  def notElim = {
+    val rule = NotElim()
+    {
+      val refs = List(stub("p"), stub("not q"))
+      val l = line("false", rule, refs)
+      rule.check(l.formula, l.refs) match {
+        case List(ReferencesMismatch(List(0, 1), _)) =>
+        case s => println(s"huh: $s")
+      }
+    }
+    {
+      val refs = List(stub("p"), stub("p"))
+      val l = line("false", rule, refs)
+      rule.check(l.formula, l.refs) match {
+        case List(ReferenceDoesntMatchRule(1, _)) =>
+        case s => println(s"huh: $s")
+      }
+    }
+    {
+      val refs = List(stub("p"), stub("not p"))
+      val l = line("p", rule, refs)
       rule.check(l.formula, l.refs) match {
         case List(FormulaDoesntMatchRule(_)) =>
         case s => println(s"huh: $s")
