@@ -346,4 +346,18 @@ object PropLogicRule {
         case _ => Nil
       }}
   }
+
+  case class ContradictionElim() extends PropLogicRule {
+    override def check(formula: PLFormula, refs: List[ProofStep[PLFormula]]): List[Mismatch] = {
+      checkCorrectNumberOfRefs(refs, 1) ++ { extractFormulas(refs) match {
+        case Left(List(r0)) => {
+          if (r0 != Contradiction()) List(
+            ReferenceDoesntMatchRule(0, "must be a contradiction")
+          ) else Nil
+        }
+        case Right(mms) => mms
+        case _ => Nil
+      }}
+    }
+  }
 }
