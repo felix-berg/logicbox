@@ -28,6 +28,13 @@ object TestPropLogic {
       refs = Nil
     )
 
+  private def boxStub(ass: String, concl: String): ProofBox[PLFormula, Unit] = ProofBox(
+    info = (), proof = List(
+      ProofLine(parse(ass), Assumption(), Nil),
+      stub(concl)
+    )
+  )
+
   private def assertEq[T](a: T, b: T): Unit = {
     assert(a == b, s"$a != $b")
   }
@@ -161,7 +168,7 @@ object TestPropLogic {
       val l = line("r and q", rule, List(r0, r1))
       rule.check(l.formula, l.refs) match {
         case List(FormulaDoesntMatchReference(0, _)) => 
-        case _ => print(s"wow: $l")
+        case s => print(s"wow: $s")
       }
     }
 
@@ -169,7 +176,75 @@ object TestPropLogic {
       val l = line("p and r", rule, List(r0, r1))
       rule.check(l.formula, l.refs) match {
         case List(FormulaDoesntMatchReference(1, _)) => 
-        case _ => print(s"wow: $l")
+        case s => print(s"wow: $s")
+      }
+    }
+  }
+
+  def extractAssumptionConclusionTest = {
+    val emptybox = ProofBox(info = (), proof = (Nil: List[ProofStep[PLFormula]]))
+    {
+      val box = ProofBox(info = (), proof = (Nil: List[ProofStep[PLFormula]]))
+      PLRules.extractAssumptionConclusion(box) match {
+        case Right(List(MiscellaneousMismatch(_))) => 
+        case s => println(s"huh: $s")
+      }
+    }
+    {
+      val assmp = ProofLine(parse("p"), Premise(), Nil) // not assumption
+      val concl = stub("q")
+      val box = ProofBox(info = (), proof = List(assmp, concl))
+      PLRules.extractAssumptionConclusion(box) match {
+        case Right(List(MiscellaneousMismatch(_))) => 
+        case s => println(s"huh: $s")
+      }
+    }
+    {
+      val box = ProofBox(info = (), proof = List(
+        emptybox,
+        stub("q")
+      ))
+      PLRules.extractAssumptionConclusion(box) match {
+        case Right(List(MiscellaneousMismatch(_))) => 
+        case s => println(s"huh: $s")
+      }
+    }
+    {
+      val box = ProofBox(info = (), proof = List(
+        ProofLine(parse("p"), Assumption(), Nil),
+        emptybox
+      ))
+      PLRules.extractAssumptionConclusion(box) match {
+        case p @ Right(List(MiscellaneousMismatch(_))) => 
+        case s => println(s"huh: $s")
+      }
+    }
+  }
+
+  def implicationIntro = {
+    val rule = ImplicationIntro()
+    {
+      val box = boxStub("p", "q")
+      val l = line("r -> q", rule, List(box))
+      rule.check(l.formula, l.refs) match {
+        case List(FormulaDoesntMatchReference(0, _)) =>
+        case s => println(s"huh: $s")
+      }
+    }
+    {
+      val box = boxStub("p", "q")
+      val l = line("p -> r", rule, List(box))
+      rule.check(l.formula, l.refs) match {
+        case List(FormulaDoesntMatchReference(0, _)) =>
+        case s => println(s"huh: $s")
+      }
+    }
+    {
+      val box = boxStub("p", "q")
+      val l = line("p and q", rule, List(box))
+      rule.check(l.formula, l.refs) match {
+        case List(FormulaDoesntMatchRule(_)) =>
+        case s => println(s"huh: $s")
       }
     }
   }
