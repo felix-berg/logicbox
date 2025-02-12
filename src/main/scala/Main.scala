@@ -507,6 +507,42 @@ object TestPropLogic {
     }
   }
 
+  def proofByContradiction = {
+    val rule = ProofByContradiction()
+    {
+      val ref = stub("false") // not a box
+      val l = line("q", rule, List(ref))
+      rule.check(l.formula, l.refs) match {
+        case List(ReferenceShouldBeBox(0, _)) => 
+        case _ => Nil
+      }
+    }
+    {
+      val box = boxStub("p", "false")
+      val l = line("p", rule, List(box))
+      rule.check(l.formula, l.refs) match {
+        case List(ReferenceDoesntMatchRule(0, _)) =>
+        case s => println(s"huh: $s")
+      }
+    }
+    {
+      val box = boxStub("not p", "true") // should end in bot
+      val l = line("p", rule, List(box))
+      rule.check(l.formula, l.refs) match {
+        case List(ReferenceDoesntMatchRule(0, _)) =>
+        case s => println(s"huh: $s")
+      }
+    }
+    {
+      val box = boxStub("not p", "false")
+      val l = line("q", rule, List(box))
+      rule.check(l.formula, l.refs) match {
+        case List(FormulaDoesntMatchReference(0, _)) =>
+        case s => println(s"huh: $s")
+      }
+    }
+  }
+
   def fullProof = {
     val l1 = line("p -> q", Premise(), Nil)
     val l2 = line("r -> s", Premise(), Nil)

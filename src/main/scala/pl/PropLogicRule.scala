@@ -440,4 +440,34 @@ object PropLogicRule {
       }}
     }
   }
+
+  case class ProofByContradiction() extends PropLogicRule {
+    private def checkImpl(formula: PLFormula, asmp: PLFormula, concl: PLFormula): List[Mismatch] = {
+      { asmp match {
+        case Not(phi) => 
+          if (formula != phi) List(
+            FormulaDoesntMatchReference(0, "must be assumption without negation")
+          ) else Nil
+        case _ => List(ReferenceDoesntMatchRule(0, "assumption in box must be a negation"))
+      }} ++ { concl match {
+        case Contradiction() => Nil
+        case _ => List(ReferenceDoesntMatchRule(0, "last line in box must be a contradiction"))
+      }}
+    }
+
+    override def check(formula: PLFormula, refs: List[ProofStep[PLFormula]]): List[Mismatch] = {
+      checkCorrectNumberOfRefs(refs, 1) ++ {
+        refs match {
+          case List(box: ProofBox[PLFormula, _] @unchecked) => 
+            extractAssumptionConclusion(box) match {
+              case Left(asmp, concl) => checkImpl(formula, asmp, concl)
+              case Right(mms) => mms
+            }
+          case _ => List(
+            ReferenceShouldBeBox(0)
+          )
+        }
+      }
+    }
+  }
 }
