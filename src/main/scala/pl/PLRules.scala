@@ -185,4 +185,32 @@ object PLRules {
       }
     }
   }
+
+  case class ImplicationElim() extends Rule[PLFormula] {
+    private def checkMatchesRef(formula: PLFormula, r0: PLFormula, r1: PLFormula): List[Mismatch] = 
+      r1 match {
+        case Implies(from, to) => 
+          (if (from != r0) List(
+            ReferencesMismatch(List(0, 1), "must match left-hand side of implication")
+          ) else Nil)
+          ++
+          (if (to != formula) List(
+            FormulaDoesntMatchReference(1, "must match right-hand side of implication")
+          ) else Nil)
+        case _ => List(
+          ReferenceDoesntMatchRule(1, "must be an implication")
+        )
+      }
+
+    override def check(formula: PLFormula, refs: List[ProofStep[PLFormula]]): List[Mismatch] = {
+      checkCorrectNumberOfRefs(refs, 2) ++ {
+        (extractFormulas(refs): @unchecked) match {
+          case Left(List(r0, r1)) =>
+            checkMatchesRef(formula, r0, r1)
+          case Right(mismatches) => 
+            mismatches
+        }
+      }
+    }
+  }
 }

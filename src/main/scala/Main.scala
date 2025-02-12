@@ -248,6 +248,59 @@ object TestPropLogic {
       }
     }
   }
+
+  def implicationElim = {
+    val rule = ImplicationElim()
+    {
+      val (r0, r1) = (stub("p"), stub("r -> q"))
+      val l = line("q", rule, List(r0, r1))
+      rule.check(l.formula, l.refs) match {
+        case List(ReferencesMismatch(List(0, 1), _)) => 
+        case s => println(s"huh: $s")
+      }
+    }
+    {
+      val (r0, r1) = (stub("p"), stub("p -> q"))
+      val l = line("r", rule, List(r0, r1))
+      rule.check(l.formula, l.refs) match {
+        case List(FormulaDoesntMatchReference(1, _)) => 
+        case s => println(s"huh: $s")
+      }
+    }
+    {
+      val (r0, r1) = (stub("p"), stub("p and q"))
+      val l = line("q", rule, List(r0, r1))
+      rule.check(l.formula, l.refs) match {
+        case List(ReferenceDoesntMatchRule(1, _)) => 
+        case s => println(s"huh: $s")
+      }
+    }
+  }
+
+  def fullProof = {
+    val l1 = line("p -> q", Premise(), Nil)
+    val l2 = line("r -> s", Premise(), Nil)
+
+    val l3 = line("p and r", Assumption(), Nil)
+    val l4 = line("p", AndElim(Side.Left), List(l3))
+    val l5 = line("r", AndElim(Side.Right), List(l3))
+    val l6 = line("q", ImplicationElim(), List(l4, l1))
+    val l7 = line("s", ImplicationElim(), List(l5, l2))
+    val l8 = line("q and s", AndIntro(), List(l6, l7))
+
+    val box = ProofBox(info = (), proof = List(l3, l4, l5, l6, l7, l8))
+    val l9 = line("p and r -> q and s", ImplicationIntro(), List(box))
+
+    def checkProof(p: Proof[PLFormula]): List[(PLFormula, Mismatch)] = p.flatMap {
+      case ProofLine(formula, rule, refs) => rule.check(formula, refs).map((formula, _))
+      case ProofBox(_, proof) => checkProof(proof)
+    }
+
+    val proof = List(l1, l2, box, l9)
+    checkProof(proof).foreach {
+      case (formula, mismatch) => println(s"$formula:\n $mismatch")
+    }
+  }
 }
 
 object Main extends PLParser {
