@@ -470,4 +470,15 @@ object PropLogicRule {
       }
     }
   }
+
+  case class LawOfExcludedMiddle() extends PropLogicRule {
+    override def check(formula: PLFormula, refs: List[ProofStep[PLFormula]]): List[Mismatch] = {
+      checkCorrectNumberOfRefs(refs, 0) ++ {
+        formula match {
+          case Or(lhs, Not(rhs)) if lhs == rhs => Nil
+          case _ => List(FormulaDoesntMatchRule("must be the disjunction of a formula and its negation"))
+        }
+      }
+    }
+  }
 }

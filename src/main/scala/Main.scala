@@ -543,6 +543,24 @@ object TestPropLogic {
     }
   }
 
+  def lawOfExcludedMiddle = {
+    val rule = LawOfExcludedMiddle()
+    {
+      val l = line("p or p", rule, Nil)
+      rule.check(l.formula, l.refs) match {
+        case List(FormulaDoesntMatchRule(_)) =>
+        case s => println(s"huh: $s")
+      }
+    }
+    {
+      val l = line("p or not q", rule, Nil)
+      rule.check(l.formula, l.refs) match {
+        case List(FormulaDoesntMatchRule(_)) =>
+        case s => println(s"huh: $s")
+      }
+    }
+  }
+
   def fullProof = {
     val l1 = line("p -> q", Premise(), Nil)
     val l2 = line("r -> s", Premise(), Nil)
