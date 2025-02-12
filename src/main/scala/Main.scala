@@ -606,12 +606,39 @@ object TestPropLogic {
     val l5  = line("p or not p", LawOfExcludedMiddle(), Nil)
 
     val l6  = line("p", Assumption(), Nil)
-    val l7  = line("not not p", NotNotIntro(), Nil)
+    val l7  = line("not not p", NotNotIntro(), List(l6))
     val l8  = line("not s", ModusTollens(), List(l2, l7))
     val l9  = line("not s and t", AndIntro(), List(l8, l3))
     val l10 = line("q", ImplicationElim(), List(l9, l4))
+
     val l11 = line("p", Assumption(), Nil)
-    // val l12 = line("q")
+    val l12 = line("q", Copy(), List(l10))
+    val b1 = ProofBox(info = (), List(l11, l12))
+
+    val l13 = line("p -> q", ImplicationIntro(), List(b1))
+    val b2 = ProofBox(info = (), List(l6, l7, l8, l9, l10, b1, l13))
+
+    val l14 = line("not p", Assumption(), Nil)
+    val l15 = line("p", Assumption(), Nil)
+    val l16 = line("false", NotElim(), List(l15, l14))
+    val l17 = line("q", ContradictionElim(), List(l16))
+    val b3 = ProofBox(info = (), List(l15, l16, l17))
+
+    val l18 = line("p -> q", ImplicationIntro(), List(b3))
+    val b4 = ProofBox(info = (), List(l14, b3, l18))
+
+    val l19 = line("p -> q", OrElim(), List(l5, b2, b4))
+    val l20 = line("r", ImplicationElim(), List(l19, l1))
+
+    def checkProof(p: Proof[PLFormula]): List[(PLFormula, Mismatch)] = p.flatMap {
+      case ProofLine(formula, rule, refs) => rule.check(formula, refs).map((formula, _))
+      case ProofBox(_, proof) => checkProof(proof)
+    }
+
+    val proof = List(l1, l2, l3, l4, l5, b2, b4, l19, l20)
+    checkProof(proof).foreach {
+      case (formula, mismatch) => println(s"$formula:\n $mismatch")
+    }
   }
 }
 

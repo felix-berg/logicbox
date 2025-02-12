@@ -288,6 +288,7 @@ object PropLogicRule {
             checkMatchesRef(formula, r0, r1)
           case Right(mismatches) => 
             mismatches
+          case _ => Nil
         }
       }
     }
