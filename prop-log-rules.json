@@ -1,87 +1,177 @@
-[
+export const rulesets = [
   {
-    rule: "premise",
-    latexRule: "\\text{premise}",
-    numRefs: 0
-  },
-  {
-    rule: "assumption",
-    latexRule: "\\text{ass.}",
-    numRefs: 0
-  },
-  {
-    rule: "and_elim_1",
-    latexRule: "\\land e_1",
-    numRefs: 1
-  },
-  {
-    rule: "and_elim_2",
-    latexRule: "\\land e_2",
-    numRefs: 1
-  },
-  {
-    rule: "or_intro_1",
-    latexRule: "\\lor i_1",
-    numRefs: 1
-  },
-  {
-    rule: "or_intro_2",
-    latexRule: "\\lor i_2",
-    numRefs: 1
-  },
-  {
-    rule: "or_elim",
-    latexRule: "\\lor e",
-    numRefs: 3
-  },
-  {
-    rule: "implies_intro",
-    latexRule: "\\rightarrow i",
-    numRefs: 1
-  }, 
-  {
-    rule: "implies_elim",
-    latexRule: "\\rightarrow e",
-    numRefs: 2
-  }, 
-  {
-    rule: "not_intro",
-    latexRule: "\\lnot i",
-    numRefs: 1
-  }, 
-  {
-    rule: "not_elim",
-    latexRule: "\\lnot e",
-    numRefs: 2
-  }, 
-  {
-    rule: "bot_elim",
-    latexRule: "\\bot e",
-    numRefs: 1
-  }, 
-  {
-    rule: "not_not_elim",
-    latexRule: "\\not\\not e",
-    numRefs: 1
-  }, 
-  {
-    rule: "modus_tollens",
-    latexRule: "\\text{MT}",
-    numRefs: 2
-  }, 
-  {
-    rule: "not_not_intro",
-    latexRule: "\\not\\not i",
-    numRefs: 1
-  }, 
-  {
-    rule: "proof_by_contradiction",
-    latexRule: "\\text{PBC}",
-    numRefs: 1
-  }, 
-  {
-    rule: "law_of_excluded_middle",
-    latexRule: "\\text{LEM}",
-    numRefs: 0
-  }
-]
+    rulesetName: "propositional-logic",
+    rules: [
+      {
+        name: "premise",
+        latex: {
+          name: "\\text{premise}",
+          premises: [],
+          conclusion: "\\phi"
+        },
+        numPremises: 0
+      },
+      {
+        name: "assumption",
+        latex: {
+          name: "\\text{ass.}",
+          premises: [],
+          conclusion: "\\phi"
+        },
+        numPremises: 0
+      },
+      {
+        name: "copy",
+        latex: {
+          name: "\\text{copy}",
+          premises: ["\\phi"],
+          conclusion: "\\phi"
+        },
+        numPremises: 1
+      },
+      {
+        name: "and_intro",
+        latex: {
+          name: "\\land i",
+          premises: ["\\phi", "\\psi"],
+          conclusion: "\\phi \\land \\psi"
+        },
+        numPremises: 2
+      },
+      {
+        name: "and_elim_1",
+        latex: {
+          name: "\\land e_1",
+          premises: ["\\phi \\land \\psi"],
+          conclusion: "\\phi"
+        },
+        numPremises: 1
+      },
+      {
+        name: "and_elim_2",
+        latex: {
+          name: "\\land e_2",
+          premises: ["\\phi \\land \\psi"],
+          conclusion: "\\psi"
+        },
+        numPremises: 1
+      },
+      {
+        name: "or_intro_1",
+        latex: {
+          name: "\\lor i_1",
+          premises: ["\\phi"],
+          conclusion: "\\phi \\land \\psi"
+        },
+        numPremises: 1
+      },
+      {
+        name: "or_intro_2",
+        latex: {
+          name: "\\lor i_2",
+          premises: ["\\psi"],
+          conclusion: "\\phi \\land \\psi"
+        },
+        numPremises: 1
+      },
+      {
+        name: "or_elim",
+        latex: {
+          name: "\\lor e",
+          premises: ["\\phi \\lor \\psi", "\\text{HERE SHOULD BE A BOX}", "\\text{HERE SHOULD BE A BOX}"],
+          conclusion: "\\chi"
+        },
+        numPremises: 3
+      },
+      {
+        name: "implies_intro",
+        latex: {
+          name: "\\rightarrow i",
+          premises: ["\\text{HERE SHOULD BE A BOX}"],
+          conclusion: "\\phi \\rightarrow \\psi"
+        },
+        numPremises: 1
+      },
+      {
+        name: "implies_elim",
+        latex: {
+          name: "\\rightarrow e",
+          premises: ["\\phi", "\\phi \\rightarrow \\psi"],
+          conclusion: "\\psi"
+        },
+        numPremises: 2
+      },
+      {
+        name: "not_intro",
+        latex: {
+          name: "\\lnot i",
+          premises: ["\\text{HERE SHOULD BE A BOX}"],
+          conclusion: "\\lnot \\phi"
+        },
+        numPremises: 1
+      },
+      {
+        name: "not_elim",
+        latex: {
+          name: "\\lnot e",
+          premises: ["\\phi", "\\lnot \\phi"],
+          conclusion: "\\bot"
+        },
+        numPremises: 2
+      },
+      {
+        name: "bot_elim",
+        latex: {
+          name: "\\bot e",
+          premises: ["\\bot"],
+          conclusion: "\\phi"
+        },
+        numPremises: 1
+      },
+      {
+        name: "not_not_elim",
+        latex: {
+          name: "\\not\\not e",
+          premises: ["\\lnot \\lnot \\phi"],
+          conclusion: "\\phi"
+        },
+        numPremises: 1
+      },
+      {
+        name: "modus_tollens",
+        latex: {
+          name: "\\text{MT}",
+          premises: ["\\phi \\rightarrow \\psi", "\\lnot \\psi"],
+          conclusion: "\\lnot \\phi"
+        },
+        numPremises: 2
+      },
+      {
+        name: "not_not_intro",
+        latex: {
+          name: "\\not\\not i",
+          premises: ["\\phi"],
+          conclusion: "\\lnot \\lnot \\phi"
+        },
+        numPremises: 1
+      },
+      {
+        name: "proof_by_contradiction",
+        latex: {
+          name: "\\text{PBC}",
+          premises: ["\\text{HERE SHOULD BE A BOX}"],
+          conclusion: "\\phi"
+        },
+        numPremises: 1
+      },
+      {
+        name: "law_of_excluded_middle",
+        latex: {
+          name: "\\text{LEM}",
+          premises: [],
+          conclusion: "\\phi \\lor \\lnot \\phi"
+        },
+        numPremises: 0
+      }
+    ]
+  }] as Ruleset[];
