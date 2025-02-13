@@ -462,4 +462,24 @@ class PLRulesTest extends AnyFunSpec {
       }
     }
   }
+
+  describe("NotNotIntro") {
+    val rule = NotNotIntro()
+
+    it("should reject when formula is not double negation") {
+      val ref = stub("q")
+      val l = line("q", rule, List(ref))
+      rule.check(l.formula, l.refs) should matchPattern {
+        case List(FormulaDoesntMatchRule(_)) => 
+      }
+    }
+
+    it("should reject when formula is double negation of wrong subformula") {
+      val ref = stub("q")
+      val l = line("not not p", rule, List(ref))
+      rule.check(l.formula, l.refs) should matchPattern {
+        case List(FormulaDoesntMatchReference(0, _)) =>
+      }
+    }
+  }
 }
