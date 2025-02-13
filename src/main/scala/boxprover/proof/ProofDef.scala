@@ -1,6 +1,6 @@
 package boxprover
 
-import boxprover.Mismatch
+import boxprover.Violation
 
 sealed trait ProofStep[+Formula]
 case class ProofLine[F](formula: F, rule: Rule[F], refs: List[ProofStep[F]]) extends ProofStep[F]

@@ -4,10 +4,11 @@ import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should._
 import org.scalatest.matchers.should.Matchers._
 import org.scalatest.Inspectors
-import java.lang.ref.Reference
 
-class PLRulesTest extends AnyFunSpec {
+class PropLogicRulesTest extends AnyFunSpec {
   import PropLogicRule._
+  import PropLogicViolation._
+  import boxprover.PLFormula
 
   private val lexer = PLLexer()
   private val parser = PLParser()
@@ -25,7 +26,8 @@ class PLRulesTest extends AnyFunSpec {
     ProofLine(
       formula = parse(formula),
       rule = new Rule[PLFormula] {
-        def check(formula: PLFormula, refs: List[ProofStep[PLFormula]]): List[Mismatch] = Nil
+        type V = PropLogicViolation
+        def check(formula: PLFormula, refs: List[ProofStep[PLFormula]]): List[Violation] = Nil
       },
       refs = Nil
     )

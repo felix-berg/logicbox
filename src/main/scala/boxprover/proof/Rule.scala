@@ -1,18 +1,10 @@
 package boxprover
 
-sealed trait Mismatch {
+trait Violation {
   def expl: String
 }
 
 trait Rule[F] {
-  def check(formula: F, refs: List[ProofStep[F]]): List[Mismatch]
+  type V <: Violation
+  def check(formula: F, refs: List[ProofStep[F]]): List[V]
 }
-
-case class WrongNumberOfReferences(exp: Int, actual: Int, expl: String = "") extends Mismatch
-case class ReferenceShouldBeBox(ref: Int, expl: String = "") extends Mismatch
-case class ReferenceShouldBeLine(ref: Int, expl: String = "") extends Mismatch
-case class ReferenceDoesntMatchRule(ref: Int, expl: String = "") extends Mismatch
-case class ReferencesMismatch(refs: List[Int], expl: String = "") extends Mismatch
-case class FormulaDoesntMatchReference(refs: Int, expl: String = "") extends Mismatch
-case class FormulaDoesntMatchRule(expl: String = "") extends Mismatch
-case class MiscellaneousMismatch(expl: String = "") extends Mismatch
