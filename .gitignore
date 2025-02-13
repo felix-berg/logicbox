@@ -4,5 +4,4 @@
 /.bsp/
 /.bloop/
 /.metals/
-**/.DS_Store/
-/.DS_Store/
+**/.DS_Store
