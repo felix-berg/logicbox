@@ -137,9 +137,8 @@ class PLRulesTest extends AnyFunSpec {
       // r0 is not line
       val (r0, r1, r2) = (boxStub("p or q", "s"), boxStub("p", "s"), boxStub("q", "s"))
       val l = line("s", rule, List(r0, r1, r2))
-      rule.check(l.formula, l.refs) match {
+      rule.check(l.formula, l.refs) should matchPattern {
         case List(ReferenceShouldBeLine(0, _)) =>
-        case l => println(s"wow: $l")
       }
     }
 
@@ -147,9 +146,8 @@ class PLRulesTest extends AnyFunSpec {
       // r1 is not box
       val (r0, r1, r2) = (stub("p or q"), stub("s"), boxStub("q", "s"))
       val l = line("s", rule, List(r0, r1, r2))
-      rule.check(l.formula, l.refs) match {
+      rule.check(l.formula, l.refs) should matchPattern {
         case List(ReferenceShouldBeBox(1, _)) =>
-        case l => println(s"wow: $l")
       }
     }
 
@@ -157,18 +155,16 @@ class PLRulesTest extends AnyFunSpec {
       // r2 is not box
       val (r0, r1, r2) = (stub("p or q"), boxStub("p", "s"), stub("q"))
       val l = line("s", rule, List(r0, r1, r2))
-      rule.check(l.formula, l.refs) match {
+      rule.check(l.formula, l.refs) should matchPattern {
         case List(ReferenceShouldBeBox(2, _)) =>
-        case l => println(s"wow: $l")
       }
     }
   
     it("should reject implication (should be or)") {
       val (r0, r1, r2) = (stub("p -> q"), boxStub("p", "s"), boxStub("q", "s"))
       val l = line("s", rule, List(r0, r1, r2))
-      rule.check(l.formula, l.refs) match {
+      rule.check(l.formula, l.refs) should matchPattern {
         case List(ReferenceDoesntMatchRule(0, _)) =>
-        case l => println(s"wow: $l")
       }
     }
 
@@ -217,29 +213,60 @@ class PLRulesTest extends AnyFunSpec {
     it("should report two formula mismatches when both operands are wrong") {
       val l = line("r and (s or v)", rule, refs)
       val mismatches = rule.check(l.formula, l.refs)
-      mismatches.exists {
-        case FormulaDoesntMatchReference(0, _) => true
-        case _ => false
+      Inspectors.forAtLeast(1, mismatches) {
+        _ should matchPattern {
+          case FormulaDoesntMatchReference(0, _) =>
+        }
       } 
-      mismatches.exists {
-        case FormulaDoesntMatchReference(1, _) => true
-        case _ => false
+      Inspectors.forAtLeast(1, mismatches) {
+        _ should matchPattern {
+          case FormulaDoesntMatchReference(1, _) =>
+        }
       }
     }
 
     it("should report lhs mismatches ref") {
       val l = line("r and q", rule, refs)
-      rule.check(l.formula, l.refs) match {
+      rule.check(l.formula, l.refs) should matchPattern {
         case List(FormulaDoesntMatchReference(0, _)) => 
-        case s => print(s"wow: $s")
       }
     }
 
     it("should report rhs mismatches ref") {
       val l = line("p and r", rule, refs)
-      rule.check(l.formula, l.refs) match {
+      rule.check(l.formula, l.refs) should matchPattern {
         case List(FormulaDoesntMatchReference(1, _)) => 
-        case s => print(s"wow: $s")
+      }
+    }
+  }
+
+  describe("ImpicationIntro") {
+    val rule = ImplicationIntro()
+    it("should reject when lhs is not assumption") {
+      val box = boxStub("p", "q")
+      val l = line("r -> q", rule, List(box))
+      rule.check(l.formula, l.refs) should matchPattern {
+        case List(FormulaDoesntMatchReference(0, _)) =>
+      }
+    }
+    it("should reject when rhs is not conclusion") {
+      val box = boxStub("p", "q")
+      val l = line("p -> r", rule, List(box))
+      rule.check(l.formula, l.refs) should matchPattern {
+        case List(FormulaDoesntMatchReference(0, _)) =>
+      }
+    }
+    it("should not introduce and") {
+      val box = boxStub("p", "q")
+      val l = line("p and q", rule, List(box))
+      rule.check(l.formula, l.refs) should matchPattern {
+        case List(FormulaDoesntMatchRule(_)) =>
+      }
+    }
+    it("should not introduce implication when given line as ref") {
+      val l = line("p -> q", rule, List(stub("q")))
+      rule.check(l.formula, l.refs) should matchPattern {
+        case List(ReferenceShouldBeBox(0, _)) =>
       }
     }
   }

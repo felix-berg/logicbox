@@ -83,41 +83,6 @@ object TestPropLogic {
     }
   }
 
-  def implicationIntro = {
-    val rule = ImplicationIntro()
-    {
-      val box = boxStub("p", "q")
-      val l = line("r -> q", rule, List(box))
-      rule.check(l.formula, l.refs) match {
-        case List(FormulaDoesntMatchReference(0, _)) =>
-        case s => println(s"huh: $s")
-      }
-    }
-    {
-      val box = boxStub("p", "q")
-      val l = line("p -> r", rule, List(box))
-      rule.check(l.formula, l.refs) match {
-        case List(FormulaDoesntMatchReference(0, _)) =>
-        case s => println(s"huh: $s")
-      }
-    }
-    {
-      val box = boxStub("p", "q")
-      val l = line("p and q", rule, List(box))
-      rule.check(l.formula, l.refs) match {
-        case List(FormulaDoesntMatchRule(_)) =>
-        case s => println(s"huh: $s")
-      }
-    }
-    {
-      val l = line("p -> q", rule, List(stub("q")))
-      rule.check(l.formula, l.refs) match {
-        case List(ReferenceShouldBeBox(0, _)) =>
-        case s => println(s"huh: $s")
-      }
-    }
-  }
-
   def implicationElim = {
     val rule = ImplicationElim()
     {
