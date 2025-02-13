@@ -8,44 +8,63 @@ object PropLogicRule {
 
   // try to extract a list of `n` formulas from `refs` (only if there are `n`).
   // otherwise report mismatches
-  private def extractFormulas(refs: List[ProofStep[PLFormula]]): Either[List[PLFormula], List[Mismatch]] = {
-    val ls: List[Either[PLFormula, Mismatch]] = refs.zipWithIndex.map {
-      case (ProofLine(formula, rule, refs), _) => 
-        Left(formula)
-      case (ProofBox(_, _), idx) =>
-        Right(ReferenceShouldBeLine(idx))
+
+  private enum BoxOrLine { case Box; case Line }
+  private def extractAndThen(refs: List[ProofStep[PLFormula]], pattern: Seq[BoxOrLine]) 
+    (func: PartialFunction[List[ProofStep[PLFormula]], List[Mismatch]]): List[Mismatch] = 
+  {
+    def checkLengthMatches(refs: Seq[_], pattern: Seq[_]): List[Mismatch] = {
+      if (refs.length != pattern.length) List(
+        WrongNumberOfReferences(pattern.length, refs.length)
+      ) else Nil
     }
 
-    val good = ls.forall {
-      case Left(_) => true
-      case Right(_) => false
+    def extract(refs: List[ProofStep[PLFormula]], pattern: Seq[BoxOrLine]): Either[List[ProofStep[PLFormula]], List[Mismatch]] = {
+      val zp = refs.zipWithIndex.zip(pattern).map { case ((ref, idx), pattern) => (idx, pattern, ref)}
+
+      val result = zp.map {
+        // matches
+        case (_, BoxOrLine.Line, line: ProofLine[_]) => Left(line) 
+        case (_, BoxOrLine.Box, box: ProofBox[_, _]) => Left(box)
+
+        // mismatches
+        case (idx, BoxOrLine.Box, line: ProofLine[_]) => Right(ReferenceShouldBeBox(idx))
+        case (idx, BoxOrLine.Line, box: ProofBox[_, _]) => Right(ReferenceShouldBeLine(idx))
+      }
+
+      val good = result.forall {
+        case Left(_) => true
+        case Right(_) => false
+      }
+
+      if (good) {
+        // collect steps 
+        Left(result.collect { case Left(step) => step }) 
+      } else {
+        // collect mismatches
+        Right(result.collect { case Right(mm) => mm })
+      }
     }
 
-    if (good) Left(ls.collect {
-      case Left(f) => f
-    }) else Right(ls.flatMap {
-      case Left(_) => None
-      case Right(mm) => Some(mm)
-    })
+    checkLengthMatches(refs, pattern) ++ { 
+      extract(refs, pattern) match {
+        case Left(ls: List[ProofStep[PLFormula]]) =>
+          assert(func.isDefinedAt(ls), s"Partial function is defined on given pattern $pattern")
+          func.apply(ls)
+        case Right(mismatches) => mismatches
+      }
+    }
   }
-
-  private def checkCorrectNumberOfRefs(refs: List[ProofStep[PLFormula]], exp: Int): List[Mismatch] =
-    if (refs.length != exp) 
-      List(WrongNumberOfReferences(exp, refs.length))
-    else Nil
 
   private def extractNFormulasAndThen(refs: List[ProofStep[PLFormula]], n: Int)
     (func: PartialFunction[List[PLFormula], List[Mismatch]]): List[Mismatch] = 
   {
-    checkCorrectNumberOfRefs(refs, n) ++ {extractFormulas(refs) match {
-      case Left(fs) if fs.length == n => 
-        assert(func.isDefinedAt(fs))
-        func(fs)
-
-      case Right(mismatches) => mismatches
-      case _ => Nil // something happened which is handled above
-    }}
+    extractAndThen(refs, (1 to n).map { s => BoxOrLine.Line }) {
+      case lines: List[ProofLine[PLFormula]] @unchecked => 
+        func.apply(lines.map(_.formula))
+    }
   }
+  
 
   class NullRule extends PropLogicRule {
     def check(formula: PLFormula, refs: List[ProofStep[PLFormula]]): List[Mismatch] = Nil
@@ -81,7 +100,7 @@ object PropLogicRule {
   }
 
   case class AndIntro() extends PropLogicRule {
-    private def checkMatchesRef(formula: PLFormula, r0: PLFormula, r1: PLFormula): List[Mismatch] = 
+    private def checkImpl(formula: PLFormula, r0: PLFormula, r1: PLFormula): List[Mismatch] = 
       formula match {
         case And(phi, psi) => List(
           (if (phi != r0) List(
@@ -97,17 +116,14 @@ object PropLogicRule {
       }
 
     override def check(formula: PLFormula, refs: List[ProofStep[PLFormula]]): List[Mismatch] = {
-      checkCorrectNumberOfRefs(refs, 2) ++ {
-        (extractFormulas(refs): @unchecked) match {
-          case Left(List(r0, r1)) => checkMatchesRef(formula, r0, r1)
-          case Right(mismatches) => mismatches
-        }
+      extractNFormulasAndThen(refs, 2) {
+        case List(r0, r1) => checkImpl(formula, r0, r1)
       }
     }
   }
 
   case class OrIntro(side: Side) extends PropLogicRule {
-    private def checkAgainstRef(formula: PLFormula, ref: PLFormula): List[Mismatch] = (side, formula) match {
+    private def checkImpl(formula: PLFormula, ref: PLFormula): List[Mismatch] = (side, formula) match {
       case (Side.Left, Or(lhs, _)) => 
         if (lhs != ref) List(
           FormulaDoesntMatchReference(0, "left-hand side of formula must match reference")
@@ -122,18 +138,14 @@ object PropLogicRule {
     }
 
     override def check(formula: PLFormula, refs: List[ProofStep[PLFormula]]): List[Mismatch] = {
-      checkCorrectNumberOfRefs(refs, 1) ++ {
-        (extractFormulas(refs): @unchecked) match {
-          case Left(List(ref)) => checkAgainstRef(formula, ref)
-          case Right(mismatches) => 
-            mismatches
-        }
+      extractNFormulasAndThen(refs, 1) {
+        case List(ref) => checkImpl(formula, ref)
       }
     }
   }
 
   case class OrElim() extends PropLogicRule {
-    private def checkAgainstRefs(
+    private def checkImpl(
       formula: PLFormula, r0: PLFormula, 
       r1: (PLFormula, PLFormula), r2: (PLFormula, PLFormula)
     ): List[Mismatch] = {
@@ -171,40 +183,25 @@ object PropLogicRule {
     }
 
     def check(formula: PLFormula, refs: List[ProofStep[PLFormula]]): List[Mismatch] = {
-      def verifyTypes(r0: ProofStep[PLFormula], r1: ProofStep[PLFormula], r2: ProofStep[PLFormula]): List[Mismatch] = {
-        { r0 match {
-          case ProofLine(_, _, _) => Nil
-          case _ => List(ReferenceShouldBeLine(0))
-        }} ++ List((r1, 1), (r2, 2)).flatMap {
-          case (ref, idx) => ref match {
-            case box: ProofBox[_, _] => Nil
-            case _ => List(ReferenceShouldBeBox(idx))
-          }
-        }
-      }
+      import BoxOrLine._
+      val pattern = List(Line, Box, Box)
 
-      checkCorrectNumberOfRefs(refs, 3) ++ { refs match {
-        case List(r0, r1, r2) => 
-          verifyTypes(r0, r1, r2) ++ ((r0, r1, r2) match {
-            case (
-              ProofLine(r0: PLFormula @unchecked, _, _),
-              r1: ProofBox[PLFormula, _] @unchecked,
-              r2: ProofBox[PLFormula, _] @unchecked
-            ) => 
-              List(r1, r2).map(extractAssumptionConclusion) match {
-                case List(Left(p1), Left(p2)) => 
-                  checkAgainstRefs(formula, r0, p1, p2)
+      extractAndThen(refs, pattern)  {
+        case List(
+          ProofLine(r0: PLFormula, _, _), 
+          r1: ProofBox[PLFormula, _] @unchecked, 
+          r2: ProofBox[PLFormula, _] @unchecked) => 
+          List(r1, r2).map(extractAssumptionConclusion) match {
+            case List(Left(p1), Left(p2)) => 
+              checkImpl(formula, r0, p1, p2)
 
-                case List(Right(mms1), Right(mms2)) => mms1 ++ mms2
-                case List(_, Right(mms)) => mms
-                case List(Right(mms), _) => mms
+            case List(Right(mms1), Right(mms2)) => mms1 ++ mms2
+            case List(_, Right(mms)) => mms
+            case List(Right(mms), _) => mms
 
-                case _ => Nil
-              }
             case _ => Nil
-          })
-        case _ => Nil
-      }}
+          }
+      }
     }
   }
 
@@ -258,17 +255,12 @@ object PropLogicRule {
     }
 
     def check(formula: PLFormula, refs: List[ProofStep[PLFormula]]): List[Mismatch] = {
-      checkCorrectNumberOfRefs(refs, 1) ++ {
-        refs match {
-          case List(box: ProofBox[PLFormula, _] @unchecked) => 
-            extractAssumptionConclusion(box) match {
-              case Right(mms) => mms
-              case Left(asmp, concl) => checkMatchesBox(formula, asmp, concl)
-            }
-          case _ => List(
-            ReferenceShouldBeBox(0)
-          )
-        }
+      extractAndThen(refs, List(BoxOrLine.Box)) {
+        case List(box: ProofBox[PLFormula, _] @unchecked) => 
+          extractAssumptionConclusion(box) match {
+            case Right(mms) => mms
+            case Left(asmp, concl) => checkMatchesBox(formula, asmp, concl)
+          }
       }
     }
   }
@@ -290,14 +282,9 @@ object PropLogicRule {
       }
 
     override def check(formula: PLFormula, refs: List[ProofStep[PLFormula]]): List[Mismatch] = {
-      checkCorrectNumberOfRefs(refs, 2) ++ {
-        (extractFormulas(refs): @unchecked) match {
-          case Left(List(r0, r1)) =>
-            checkMatchesRef(formula, r0, r1)
-          case Right(mismatches) => 
-            mismatches
-          case _ => Nil
-        }
+      extractNFormulasAndThen(refs, 2) {
+        case List(r0, r1) =>
+          checkMatchesRef(formula, r0, r1)
       }
     }
   }
@@ -320,14 +307,13 @@ object PropLogicRule {
     }}
       
     override def check(formula: PLFormula, refs: List[ProofStep[PLFormula]]): List[Mismatch] = {
-      checkCorrectNumberOfRefs(refs, 1) ++ { refs match {
+      extractAndThen(refs, List(BoxOrLine.Box)) {
         case List(box: ProofBox[PLFormula, _] @unchecked) => 
           extractAssumptionConclusion(box) match {
             case Left(asmp, concl) => checkImpl(formula, asmp, concl)
             case Right(mms) => mms
           }
-        case _ => Nil
-      }}
+      }
     }
   }
 
@@ -349,40 +335,33 @@ object PropLogicRule {
     }
 
     override def check(formula: PLFormula, refs: List[ProofStep[PLFormula]]): List[Mismatch] = 
-      checkCorrectNumberOfRefs(refs, 2) ++ { extractFormulas(refs) match {
-        case Left(List(r0, r1)) => checkImpl(formula, r0, r1)
-        case Right(mms) => mms
-        case _ => Nil
-      }}
+      extractNFormulasAndThen(refs, 2) {
+        case List(r0, r1) => checkImpl(formula, r0, r1)
+      }
   }
 
   case class ContradictionElim() extends PropLogicRule {
     override def check(formula: PLFormula, refs: List[ProofStep[PLFormula]]): List[Mismatch] = {
-      checkCorrectNumberOfRefs(refs, 1) ++ { extractFormulas(refs) match {
-        case Left(List(r0)) => {
+      extractNFormulasAndThen(refs, 1) {
+        case List(r0) =>
           if (r0 != Contradiction()) List(
             ReferenceDoesntMatchRule(0, "must be a contradiction")
           ) else Nil
-        }
-        case Right(mms) => mms
-        case _ => Nil
-      }}
+      }
     }
   }
 
   case class NotNotElim() extends PropLogicRule {
     override def check(formula: PLFormula, refs: List[ProofStep[PLFormula]]): List[Mismatch] = {
-      checkCorrectNumberOfRefs(refs, 1) ++ { extractFormulas(refs) match {
-        case Left(List(Not(Not(phi)))) => 
+      extractNFormulasAndThen(refs, 1) {
+        case List(Not(Not(phi))) => 
           if (formula != phi) List(
-            FormulaDoesntMatchReference(0, "must equal the reference, but with the two outer negations removed")
+            FormulaDoesntMatchReference(0, "must equal reference with the two outermost negations removed")
           ) else Nil
-        case Left(List(_)) => List(
+        case List(_) => List(
           ReferenceDoesntMatchRule(0, "must be a negation of a negation")
         )
-        case Right(mms) => mms
-        case _ => Nil
-      }}
+      }
     }
   }
 
@@ -420,11 +399,9 @@ object PropLogicRule {
     }
 
     override def check(formula: PLFormula, refs: List[ProofStep[PLFormula]]): List[Mismatch] = {
-      checkCorrectNumberOfRefs(refs, 2) ++ { extractFormulas(refs) match {
-        case Left(List(r0, r1)) => checkImpl(formula, r0, r1)
-        case Right(mms) => mms
-        case _ => Nil
-      }}
+      extractNFormulasAndThen(refs, 2) {
+        case List(r0, r1) => checkImpl(formula, r0, r1)
+      }
     }
   }
 
@@ -442,11 +419,9 @@ object PropLogicRule {
     }
 
     override def check(formula: PLFormula, refs: List[ProofStep[PLFormula]]): List[Mismatch] = {
-      checkCorrectNumberOfRefs(refs, 1) ++ { extractFormulas(refs) match {
-        case Left(List(ref)) => checkImpl(formula, ref)
-        case Right(mms) => mms
-        case _ => Nil
-      }}
+      extractNFormulasAndThen(refs, 1) {
+        case List(ref) => checkImpl(formula, ref)
+      }
     }
   }
 
@@ -465,41 +440,36 @@ object PropLogicRule {
     }
 
     override def check(formula: PLFormula, refs: List[ProofStep[PLFormula]]): List[Mismatch] = {
-      checkCorrectNumberOfRefs(refs, 1) ++ {
-        refs match {
-          case List(box: ProofBox[PLFormula, _] @unchecked) => 
-            extractAssumptionConclusion(box) match {
-              case Left(asmp, concl) => checkImpl(formula, asmp, concl)
-              case Right(mms) => mms
-            }
-          case _ => List(
-            ReferenceShouldBeBox(0)
-          )
-        }
+      extractAndThen(refs, List(BoxOrLine.Box)) {
+        case List(box: ProofBox[PLFormula, _] @unchecked) => 
+          extractAssumptionConclusion(box) match {
+            case Left(asmp, concl) => checkImpl(formula, asmp, concl)
+            case Right(mms) => mms
+          }
       }
     }
   }
 
   case class LawOfExcludedMiddle() extends PropLogicRule {
     override def check(formula: PLFormula, refs: List[ProofStep[PLFormula]]): List[Mismatch] = {
-      checkCorrectNumberOfRefs(refs, 0) ++ {
-        formula match {
-          case Or(lhs, Not(rhs)) if lhs == rhs => Nil
-          case _ => List(FormulaDoesntMatchRule("must be the disjunction of a formula and its negation"))
-        }
+      extractNFormulasAndThen(refs, 0) {
+        case Nil =>
+          formula match {
+            case Or(lhs, Not(rhs)) if lhs == rhs => Nil
+            case _ => List(FormulaDoesntMatchRule("must be the disjunction of a formula and its negation"))
+          }
       }
     }
   }
 
   case class Copy() extends PropLogicRule {
     override def check(formula: PLFormula, refs: List[ProofStep[PLFormula]]): List[Mismatch] = {
-      checkCorrectNumberOfRefs(refs, 1) ++ { extractFormulas(refs) match {
-        case Left(List(ref)) if ref == formula => Nil
-        case Left(_) => List(
-          FormulaDoesntMatchReference(0, "must be an exact copy of reference")
-        )
-        case Right(mms) => mms
-      }}
+      extractNFormulasAndThen(refs, 1) {
+        case List(ref) => 
+          if (ref != formula) List(
+            FormulaDoesntMatchReference(0, "must be an exact copy of reference")
+          ) else Nil
+      }
     }
   }
 }
