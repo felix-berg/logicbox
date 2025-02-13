@@ -358,5 +358,32 @@ class PLRulesTest extends AnyFunSpec {
         case List(FormulaDoesntMatchRule(_)) =>
       }
     }
+  }  
+
+  describe("NotElim") {
+    val rule = NotElim()
+    it("should reject when second ref is not negation of first") {
+      val refs = List(stub("p"), stub("not q"))
+      val l = line("false", rule, refs)
+      rule.check(l.formula, l.refs) should matchPattern {
+        case List(ReferencesMismatch(List(0, 1), _)) =>
+      }
+    }
+
+    it("should reject when second ref is not a negation") {
+      val refs = List(stub("p"), stub("p"))
+      val l = line("false", rule, refs)
+      rule.check(l.formula, l.refs) should matchPattern {
+        case List(ReferenceDoesntMatchRule(1, _)) =>
+      }
+    }
+
+    it("should reject when formula is not a contradiction") {
+      val refs = List(stub("p"), stub("not p"))
+      val l = line("p", rule, refs)
+      rule.check(l.formula, l.refs) should matchPattern {
+        case List(FormulaDoesntMatchRule(_)) =>
+      }
+    }
   }
 }
