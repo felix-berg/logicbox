@@ -43,44 +43,6 @@ object TestPropLogic {
     assert(a != b, s"$a == $b")
   }
 
-  def andIntro: Unit = {
-    val rule = AndIntro()
-    val List(r0, r1) = List("p", "q").map(stub)
-    {
-      val l = line("p and q", rule, List(r0, r1))
-      assertEq(rule.check(l.formula, l.refs), Nil)
-    }
-
-    {
-      val l = line("r and (s or v)", rule, List(r0, r1))
-      val mismatches = rule.check(l.formula, l.refs)
-      mismatches.exists {
-        case FormulaDoesntMatchReference(0, _) => true
-        case _ => false
-      } 
-      mismatches.exists {
-        case FormulaDoesntMatchReference(1, _) => true
-        case _ => false
-      }
-    }
-
-    {
-      val l = line("r and q", rule, List(r0, r1))
-      rule.check(l.formula, l.refs) match {
-        case List(FormulaDoesntMatchReference(0, _)) => 
-        case s => print(s"wow: $s")
-      }
-    }
-
-    {
-      val l = line("p and r", rule, List(r0, r1))
-      rule.check(l.formula, l.refs) match {
-        case List(FormulaDoesntMatchReference(1, _)) => 
-        case s => print(s"wow: $s")
-      }
-    }
-  }
-
   def extractAssumptionConclusionTest = {
     val emptybox = ProofBox(info = (), proof = (Nil: List[ProofStep[PLFormula]]))
     {

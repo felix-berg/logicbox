@@ -37,7 +37,7 @@ class PLRulesTest extends AnyFunSpec {
     )
   )
 
-  describe("PropLogicRule::AndElim") {
+  describe("AndElim") {
     val leftRule = AndElim(Side.Left)
 
     it("should copy lhs of conjunction") {
@@ -88,7 +88,7 @@ class PLRulesTest extends AnyFunSpec {
     }
   }
 
-  describe("PropLogicRule::orIntro") {
+  describe("orIntro") {
     val leftRule = OrIntro(Side.Left)
     it("should intro with reference on lhs") {
       val ref = stub("p")
@@ -131,7 +131,7 @@ class PLRulesTest extends AnyFunSpec {
     }
   }
 
-  describe("PropLogicRules::OrElim") {
+  describe("OrElim") {
     val rule = OrElim()
     it("should reject when first ref is box") {
       // r0 is not line
@@ -205,4 +205,42 @@ class PLRulesTest extends AnyFunSpec {
     }
   }
 
+  describe("AndIntro") {
+    val rule = AndIntro()
+    val refs = List("p", "q").map(stub)
+
+    it("should work with correct usage") {
+      val l = line("p and q", rule, refs)
+      rule.check(l.formula, l.refs) should be (Nil)
+    }
+
+    it("should report two formula mismatches when both operands are wrong") {
+      val l = line("r and (s or v)", rule, refs)
+      val mismatches = rule.check(l.formula, l.refs)
+      mismatches.exists {
+        case FormulaDoesntMatchReference(0, _) => true
+        case _ => false
+      } 
+      mismatches.exists {
+        case FormulaDoesntMatchReference(1, _) => true
+        case _ => false
+      }
+    }
+
+    it("should report lhs mismatches ref") {
+      val l = line("r and q", rule, refs)
+      rule.check(l.formula, l.refs) match {
+        case List(FormulaDoesntMatchReference(0, _)) => 
+        case s => print(s"wow: $s")
+      }
+    }
+
+    it("should report rhs mismatches ref") {
+      val l = line("p and r", rule, refs)
+      rule.check(l.formula, l.refs) match {
+        case List(FormulaDoesntMatchReference(1, _)) => 
+        case s => print(s"wow: $s")
+      }
+    }
+  }
 }
