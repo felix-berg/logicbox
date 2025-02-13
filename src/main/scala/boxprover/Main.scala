@@ -43,50 +43,6 @@ object TestPropLogic {
     assert(a != b, s"$a == $b")
   }
 
-  def modusTollens = {
-    val rule = ModusTollens()
-    {
-      val refs = List(stub("p -> q"), stub("not q"))
-      val l = line("p", rule, refs)
-      rule.check(l.formula, l.refs) match {
-        case List(FormulaDoesntMatchRule(_)) => 
-        case s => println(s"huh: $s")
-      }
-    }
-    {
-      val refs = List(stub("p and q"), stub("not q"))
-      val l = line("not p", rule, refs)
-      rule.check(l.formula, l.refs) match {
-        case List(ReferenceDoesntMatchRule(0, _)) => 
-        case s => println(s"huh: $s")
-      }
-    }
-    {
-      val refs = List(stub("p -> q"), stub("q"))
-      val l = line("not p", rule, refs)
-      rule.check(l.formula, l.refs) match {
-        case List(ReferenceDoesntMatchRule(1, _)) => 
-        case s => println(s"huh: $s")
-      }
-    }
-    {
-      val refs = List(stub("p -> q"), stub("not q"))
-      val l = line("not r", rule, refs)
-      rule.check(l.formula, l.refs) match {
-        case List(FormulaDoesntMatchReference(0, _)) => 
-        case s => println(s"huh: $s")
-      }
-    }
-    {
-      val refs = List(stub("p -> q"), stub("not r"))
-      val l = line("not p", rule, refs)
-      rule.check(l.formula, l.refs) match {
-        case List(ReferencesMismatch(List(0, 1), _)) => 
-        case s => println(s"huh: $s")
-      }
-    }
-  }
-
   def notNotIntro = {
     val rule = NotNotIntro()
     {

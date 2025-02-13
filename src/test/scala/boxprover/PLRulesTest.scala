@@ -401,6 +401,7 @@ class PLRulesTest extends AnyFunSpec {
 
   describe("NotNotElim") {
     val rule = NotNotElim() 
+
     it("should reject when ref is only single negation (not double)") {
       val ref = stub("not p")
       val l = line("p", rule, List(ref))
@@ -412,9 +413,52 @@ class PLRulesTest extends AnyFunSpec {
     it("should reject when formula does not match what has been doubly negated") {
       val ref = stub("not not p")
       val l = line("q", rule, List(ref))
-      rule.check(l.formula, l.refs) match {
+      rule.check(l.formula, l.refs) should matchPattern {
         case List(FormulaDoesntMatchReference(0, _)) => 
-        case s => println(s"huh: $s")
+      }
+    }
+  }
+
+  describe("ModusTollens") {
+    val rule = ModusTollens()
+
+    it("should reject when formula is not negation of rhs of implication") {
+      val refs = List(stub("p -> q"), stub("not q"))
+      val l = line("p", rule, refs)
+      rule.check(l.formula, l.refs) should matchPattern {
+        case List(FormulaDoesntMatchRule(_)) => 
+      }
+    }
+
+    it("should reject when first ref is not implication") {
+      val refs = List(stub("p and q"), stub("not q"))
+      val l = line("not p", rule, refs)
+      rule.check(l.formula, l.refs) should matchPattern {
+        case List(ReferenceDoesntMatchRule(0, _)) => 
+      }
+    }
+
+    it("should reject when second ref is not negation") {
+      val refs = List(stub("p -> q"), stub("q"))
+      val l = line("not p", rule, refs)
+      rule.check(l.formula, l.refs) should matchPattern {
+        case List(ReferenceDoesntMatchRule(1, _)) => 
+      }
+    }
+
+    it("should reject when formula is not negation of lhs of implication") {
+      val refs = List(stub("p -> q"), stub("not q"))
+      val l = line("not r", rule, refs)
+      rule.check(l.formula, l.refs) should matchPattern {
+        case List(FormulaDoesntMatchReference(0, _)) => 
+      }
+    }
+    
+    it("should reject when second ref is not negation of rhs of implication") {
+      val refs = List(stub("p -> q"), stub("not r"))
+      val l = line("not p", rule, refs)
+      rule.check(l.formula, l.refs) should matchPattern {
+        case List(ReferencesMismatch(List(0, 1), _)) => 
       }
     }
   }
