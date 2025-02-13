@@ -43,46 +43,6 @@ object TestPropLogic {
     assert(a != b, s"$a == $b")
   }
 
-  def extractAssumptionConclusionTest = {
-    val emptybox = ProofBox(info = (), proof = (Nil: List[ProofStep[PLFormula]]))
-    {
-      val box = ProofBox(info = (), proof = (Nil: List[ProofStep[PLFormula]]))
-      PropLogicRule.extractAssumptionConclusion(box) match {
-        case Right(List(MiscellaneousMismatch(_))) => 
-        case s => println(s"huh: $s")
-      }
-    }
-    {
-      val assmp = ProofLine(parse("p"), Premise(), Nil) // not assumption
-      val concl = stub("q")
-      val box = ProofBox(info = (), proof = List(assmp, concl))
-      PropLogicRule.extractAssumptionConclusion(box) match {
-        case Right(List(MiscellaneousMismatch(_))) => 
-        case s => println(s"huh: $s")
-      }
-    }
-    {
-      val box = ProofBox(info = (), proof = List(
-        emptybox,
-        stub("q")
-      ))
-      PropLogicRule.extractAssumptionConclusion(box) match {
-        case Right(List(MiscellaneousMismatch(_))) => 
-        case s => println(s"huh: $s")
-      }
-    }
-    {
-      val box = ProofBox(info = (), proof = List(
-        ProofLine(parse("p"), Assumption(), Nil),
-        emptybox
-      ))
-      PropLogicRule.extractAssumptionConclusion(box) match {
-        case p @ Right(List(MiscellaneousMismatch(_))) => 
-        case s => println(s"huh: $s")
-      }
-    }
-  }
-
   def notIntro = {
     val rule = NotIntro()
     {

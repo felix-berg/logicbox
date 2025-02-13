@@ -295,4 +295,68 @@ class PLRulesTest extends AnyFunSpec {
       }
     }
   }
+
+  describe("extractAssumptionConclusionTest (helper function)") {
+    val emptybox = ProofBox(info = (), proof = (Nil: List[ProofStep[PLFormula]]))
+    it("should reject empty box") {
+      val box = ProofBox(info = (), proof = (Nil: List[ProofStep[PLFormula]]))
+      PropLogicRule.extractAssumptionConclusion(box) should matchPattern {
+        case Right(List(MiscellaneousMismatch(_))) => 
+      }
+    }
+    it("should reject box where first line is not assumption") {
+      val assmp = ProofLine(parse("p"), Premise(), Nil) // not assumption
+      val concl = stub("q")
+      val box = ProofBox(info = (), proof = List(assmp, concl))
+      PropLogicRule.extractAssumptionConclusion(box) should matchPattern {
+        case Right(List(MiscellaneousMismatch(_))) => 
+      }
+    }
+    it("should reject box where first line is a box") {
+      val box = ProofBox(info = (), proof = List(
+        emptybox,
+        stub("q")
+      ))
+      PropLogicRule.extractAssumptionConclusion(box) should matchPattern {
+        case Right(List(MiscellaneousMismatch(_))) => 
+      }
+    }
+    it("should reject box where last line is a box") {
+      val box = ProofBox(info = (), proof = List(
+        ProofLine(parse("p"), Assumption(), Nil),
+        emptybox
+      ))
+      PropLogicRule.extractAssumptionConclusion(box) should matchPattern {
+        case p @ Right(List(MiscellaneousMismatch(_))) => 
+      }
+    }
+  }
+
+  describe("NotIntro") {
+    val rule = NotIntro()
+
+    it("should reject when last line is not contradiction") {
+      val box = boxStub("p", "q")
+      val l = line("not p", rule, List(box))
+      rule.check(l.formula, l.refs) should matchPattern {
+        case List(ReferenceDoesntMatchRule(0, _)) => 
+      }
+    }
+
+    it("should reject when formula is not negation of assumption") {
+      val box = boxStub("p", "false")
+      val l = line("not q", rule, List(box))
+      rule.check(l.formula, l.refs) should matchPattern {
+        case List(FormulaDoesntMatchReference(0, _)) =>
+      }
+    }
+
+    it("should reject when formula is not a negation") {
+      val box = boxStub("p", "false")
+      val l = line("p", rule, List(box))
+      rule.check(l.formula, l.refs) should matchPattern {
+        case List(FormulaDoesntMatchRule(_)) =>
+      }
+    }
+  }
 }
