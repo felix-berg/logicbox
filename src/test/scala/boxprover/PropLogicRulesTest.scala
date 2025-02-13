@@ -4,10 +4,11 @@ import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should._
 import org.scalatest.matchers.should.Matchers._
 import org.scalatest.Inspectors
-import java.lang.ref.Reference
 
-class PLRulesTest extends AnyFunSpec {
+class PropLogicRulesTest extends AnyFunSpec {
   import PropLogicRule._
+  import PropLogicViolation._
+  import boxprover.PLFormula
 
   private val lexer = PLLexer()
   private val parser = PLParser()
@@ -25,7 +26,8 @@ class PLRulesTest extends AnyFunSpec {
     ProofLine(
       formula = parse(formula),
       rule = new Rule[PLFormula] {
-        def check(formula: PLFormula, refs: List[ProofStep[PLFormula]]): List[Mismatch] = Nil
+        type V = PropLogicViolation
+        def check(formula: PLFormula, refs: List[ProofStep[PLFormula]]): List[Violation] = Nil
       },
       refs = Nil
     )
@@ -301,7 +303,7 @@ class PLRulesTest extends AnyFunSpec {
     it("should reject empty box") {
       val box = ProofBox(info = (), proof = (Nil: List[ProofStep[PLFormula]]))
       PropLogicRule.extractAssumptionConclusion(box) should matchPattern {
-        case Right(List(MiscellaneousMismatch(_))) => 
+        case Right(List(MiscellaneousViolation(_))) => 
       }
     }
     it("should reject box where first line is not assumption") {
@@ -309,7 +311,7 @@ class PLRulesTest extends AnyFunSpec {
       val concl = stub("q")
       val box = ProofBox(info = (), proof = List(assmp, concl))
       PropLogicRule.extractAssumptionConclusion(box) should matchPattern {
-        case Right(List(MiscellaneousMismatch(_))) => 
+        case Right(List(MiscellaneousViolation(_))) => 
       }
     }
     it("should reject box where first line is a box") {
@@ -318,7 +320,7 @@ class PLRulesTest extends AnyFunSpec {
         stub("q")
       ))
       PropLogicRule.extractAssumptionConclusion(box) should matchPattern {
-        case Right(List(MiscellaneousMismatch(_))) => 
+        case Right(List(MiscellaneousViolation(_))) => 
       }
     }
     it("should reject box where last line is a box") {
@@ -327,7 +329,7 @@ class PLRulesTest extends AnyFunSpec {
         emptybox
       ))
       PropLogicRule.extractAssumptionConclusion(box) should matchPattern {
-        case p @ Right(List(MiscellaneousMismatch(_))) => 
+        case p @ Right(List(MiscellaneousViolation(_))) => 
       }
     }
   }
