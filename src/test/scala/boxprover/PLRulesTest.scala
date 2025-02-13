@@ -386,4 +386,16 @@ class PLRulesTest extends AnyFunSpec {
       }
     }
   }
+
+  describe("ContradictionElim") {
+    val rule = ContradictionElim()
+    it("should reject when formula is not contradiction") {
+      val ref = stub("p")
+      val l = line("p", rule, List(ref))
+      rule.check(l.formula, l.refs) match {
+        case List(ReferenceDoesntMatchRule(0, _)) =>
+        case s => println(s"huh: $s")
+      }
+    }
+  }
 }

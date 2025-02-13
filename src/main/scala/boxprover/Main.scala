@@ -43,18 +43,6 @@ object TestPropLogic {
     assert(a != b, s"$a == $b")
   }
 
-  def contradictionElim = {
-    val rule = ContradictionElim()
-    {
-      val ref = stub("p")
-      val l = line("p", rule, List(ref))
-      rule.check(l.formula, l.refs) match {
-        case List(ReferenceDoesntMatchRule(0, _)) =>
-        case s => println(s"huh: $s")
-      }
-    }
-  }
-
   def notNotElim = {
     val rule = NotNotElim() 
     {
