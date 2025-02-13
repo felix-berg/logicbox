@@ -6,8 +6,8 @@ sealed trait PropLogicRule extends Rule[PLFormula] {
 }
 
 object PropLogicRule {
-  import PLFormula.*
-  import PropLogicViolation.*
+  import PLFormula._
+  import PropLogicViolation._
 
   enum Side { case Left; case Right }
   type Step = ProofStep[PLFormula, PropLogicRule]
@@ -46,7 +46,7 @@ object PropLogicRule {
 
       if (good) {
         // collect steps 
-        Left(result.collect { case Left(step) => step }) 
+        Left(result.collect { case Left(step) => (step: Step) }) 
       } else {
         // collect violations
         Right(result.collect { case Right(mm) => mm })
@@ -73,7 +73,7 @@ object PropLogicRule {
   }
 
   class NullRule extends PropLogicRule {
-    def check(formula: PLFormula, refs: List[ProofStep[PLFormula, PropLogicRule]]): List[Violation] = ???
+    def check(formula: PLFormula, refs: List[ProofStep[PLFormula, PropLogicRule]]): List[Violation] = Nil
   }
 
   case class Premise() extends NullRule
