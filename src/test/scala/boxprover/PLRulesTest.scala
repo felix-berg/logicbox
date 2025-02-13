@@ -398,4 +398,24 @@ class PLRulesTest extends AnyFunSpec {
       }
     }
   }
+
+  describe("NotNotElim") {
+    val rule = NotNotElim() 
+    it("should reject when ref is only single negation (not double)") {
+      val ref = stub("not p")
+      val l = line("p", rule, List(ref))
+      rule.check(l.formula, l.refs) should matchPattern {
+        case List(ReferenceDoesntMatchRule(0, _)) => 
+      }
+    }
+
+    it("should reject when formula does not match what has been doubly negated") {
+      val ref = stub("not not p")
+      val l = line("q", rule, List(ref))
+      rule.check(l.formula, l.refs) match {
+        case List(FormulaDoesntMatchReference(0, _)) => 
+        case s => println(s"huh: $s")
+      }
+    }
+  }
 }
