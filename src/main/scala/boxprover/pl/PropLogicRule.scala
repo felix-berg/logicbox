@@ -220,23 +220,23 @@ object PropLogicRule {
 
   def extractAssumptionConclusion(box: ProofBox[PLFormula, _]): Either[(PLFormula, PLFormula), List[Violation]] = {
     firstAndLast(box.proof) match {
-      case None => Right(List(MiscellaneousMismatch("box is empty")))
+      case None => Right(List(MiscellaneousViolation("box is empty")))
 
-      case Some(ProofLine(asmp, Assumption(), _), ProofLine(concl, _, _)) =>
+      case Some(ProofLine(asmp: PLFormula, Assumption(), _), ProofLine(concl: PLFormula, _, _)) =>
         Left(asmp, concl)
 
-      case Some(ProofLine(ass, rule, _), _) if rule != Assumption() => Right(List(
-        MiscellaneousMismatch("first step in box is not assumption")
+      case Some(ProofLine(_, rule, _), _) if rule != Assumption() => Right(List(
+        MiscellaneousViolation("first step in box is not assumption")
       ))
 
       case Some(ass, concl) => Right({ ass match {
         case _: ProofBox[_, _] => List(
-          MiscellaneousMismatch("assumption must be a line")
+          MiscellaneousViolation("assumption must be a line")
         )
         case _ => Nil
       }} ++ { concl match {
         case _: ProofBox[_, _] => List(
-          MiscellaneousMismatch("conclusion must be a line")
+          MiscellaneousViolation("conclusion must be a line")
         )
         case _ => Nil
       }})

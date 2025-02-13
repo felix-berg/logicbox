@@ -10,5 +10,5 @@ object PropLogicViolation {
   case class ReferencesMismatch(refs: List[Int], expl: String = "") extends PropLogicViolation
   case class FormulaDoesntMatchReference(refs: Int, expl: String = "") extends PropLogicViolation
   case class FormulaDoesntMatchRule(expl: String = "") extends PropLogicViolation
-  case class MiscellaneousMismatch(expl: String = "") extends PropLogicViolation
+  case class MiscellaneousViolation(expl: String = "") extends PropLogicViolation
 }

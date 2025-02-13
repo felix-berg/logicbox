@@ -303,7 +303,7 @@ class PropLogicRulesTest extends AnyFunSpec {
     it("should reject empty box") {
       val box = ProofBox(info = (), proof = (Nil: List[ProofStep[PLFormula]]))
       PropLogicRule.extractAssumptionConclusion(box) should matchPattern {
-        case Right(List(MiscellaneousMismatch(_))) => 
+        case Right(List(MiscellaneousViolation(_))) => 
       }
     }
     it("should reject box where first line is not assumption") {
@@ -311,7 +311,7 @@ class PropLogicRulesTest extends AnyFunSpec {
       val concl = stub("q")
       val box = ProofBox(info = (), proof = List(assmp, concl))
       PropLogicRule.extractAssumptionConclusion(box) should matchPattern {
-        case Right(List(MiscellaneousMismatch(_))) => 
+        case Right(List(MiscellaneousViolation(_))) => 
       }
     }
     it("should reject box where first line is a box") {
@@ -320,7 +320,7 @@ class PropLogicRulesTest extends AnyFunSpec {
         stub("q")
       ))
       PropLogicRule.extractAssumptionConclusion(box) should matchPattern {
-        case Right(List(MiscellaneousMismatch(_))) => 
+        case Right(List(MiscellaneousViolation(_))) => 
       }
     }
     it("should reject box where last line is a box") {
@@ -329,7 +329,7 @@ class PropLogicRulesTest extends AnyFunSpec {
         emptybox
       ))
       PropLogicRule.extractAssumptionConclusion(box) should matchPattern {
-        case p @ Right(List(MiscellaneousMismatch(_))) => 
+        case p @ Right(List(MiscellaneousViolation(_))) => 
       }
     }
   }
