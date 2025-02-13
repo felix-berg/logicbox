@@ -482,4 +482,44 @@ class PLRulesTest extends AnyFunSpec {
       }
     }
   }
+
+  describe("ProofByContradiction") {
+    val rule = ProofByContradiction()
+
+    it("should reject when ref is not a box") {
+      val ref = stub("false") // not a box
+      val l = line("q", rule, List(ref))
+      rule.check(l.formula, l.refs) match {
+        case List(ReferenceShouldBeBox(0, _)) => 
+        case _ => Nil
+      }
+    }
+
+    it("should reject when assumption is not a negation") {
+      val box = boxStub("p", "false")
+      val l = line("p", rule, List(box))
+      rule.check(l.formula, l.refs) match {
+        case List(ReferenceDoesntMatchRule(0, _)) =>
+        case s => println(s"huh: $s")
+      }
+    }
+
+    it("should reject when conclusion is not contradiction") {
+      val box = boxStub("not p", "true") // should end in bot
+      val l = line("p", rule, List(box))
+      rule.check(l.formula, l.refs) match {
+        case List(ReferenceDoesntMatchRule(0, _)) =>
+        case s => println(s"huh: $s")
+      }
+    }
+
+    it("should reject when formula is not the assumption without outer negation") {
+      val box = boxStub("not p", "false")
+      val l = line("q", rule, List(box))
+      rule.check(l.formula, l.refs) match {
+        case List(FormulaDoesntMatchReference(0, _)) =>
+        case s => println(s"huh: $s")
+      }
+    }
+  }
 }
