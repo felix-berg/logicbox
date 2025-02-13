@@ -86,4 +86,47 @@ class PLRulesTest extends AnyFunSpec {
       }
     }
   }
+
+  describe("PropLogicRule::orIntro") {
+    val leftRule = OrIntro(Side.Left)
+    it("should intro with reference on lhs") {
+      val ref = stub("p")
+      val l = line("p or (p -> q -> v)", leftRule, List(ref))
+      assert(leftRule.check(l.formula, List(ref)) === Nil)
+    }
+    it("should not match with wrong lhs") {
+      val ref = stub("p")
+      val l = line("q or (p -> q -> v)", leftRule, List(ref))
+      leftRule.check(l.formula, l.refs) should matchPattern {
+        case List(FormulaDoesntMatchReference(0, _)) =>
+      }
+    }
+    it("should not introduce and (left)") {
+      val ref = stub("p")
+      val l = line("p and (p -> q -> v)", leftRule, List(ref))
+      leftRule.check(l.formula, l.refs) should matchPattern {
+        case List(FormulaDoesntMatchRule(_)) =>
+      }
+    }
+    val rightRule = OrIntro(Side.Right)
+    it("should introduce with ref on rhs") {
+      val ref = stub("p")
+      val l = line("(p -> q -> v) or p", rightRule, List(ref))
+      assert(rightRule.check(l.formula, List(ref)) === Nil)
+    }
+    it("should not introduce q when ref is p") {
+      val ref = stub("p")
+      val l = line("(p -> q -> v) or q", rightRule, List(ref))
+      rightRule.check(l.formula, l.refs) should matchPattern {
+        case List(FormulaDoesntMatchReference(0, _)) =>
+      }
+    }
+    it("should not introduce and (right)") {
+      val ref = stub("p")
+      val l = line("(p -> q -> v) and p", rightRule, List(ref))
+      rightRule.check(l.formula, l.refs) should matchPattern {
+        case List(FormulaDoesntMatchRule(_)) =>
+      }
+    }
+  }
 }

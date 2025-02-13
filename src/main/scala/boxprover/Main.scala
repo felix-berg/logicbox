@@ -43,59 +43,6 @@ object TestPropLogic {
     assert(a != b, s"$a == $b")
   }
 
-  // TODO: wrong num args for or and boxes
-  def andElim(): Unit = {
-    val leftRule = AndElim(Side.Left)
-
-  }
-
-  def orIntro: Unit = {
-    val leftRule = OrIntro(Side.Left)
-    {
-      val ref = stub("p")
-      val l = line("p or (p -> q -> v)", leftRule, List(ref))
-      assertEq(leftRule.check(l.formula, List(ref)), Nil)
-    }
-    {
-      val ref = stub("p")
-      val l = line("q or (p -> q -> v)", leftRule, List(ref))
-      leftRule.check(l.formula, l.refs) match {
-        case List(FormulaDoesntMatchReference(0, _)) =>
-        case l => println(s"wow: $l")
-      }
-    }
-    {
-      val ref = stub("p")
-      val l = line("p and (p -> q -> v)", leftRule, List(ref))
-      leftRule.check(l.formula, l.refs) match {
-        case List(FormulaDoesntMatchRule(_)) =>
-        case l => println(s"wow: $l")
-      }
-    }
-    val rightRule = OrIntro(Side.Right)
-    {
-      val ref = stub("p")
-      val l = line("(p -> q -> v) or p", rightRule, List(ref))
-      assertEq(rightRule.check(l.formula, List(ref)), Nil)
-    }
-    {
-      val ref = stub("p")
-      val l = line("(p -> q -> v) or q", rightRule, List(ref))
-      rightRule.check(l.formula, l.refs) match {
-        case List(FormulaDoesntMatchReference(0, _)) =>
-        case l => println(s"wow: $l")
-      }
-    }
-    {
-      val ref = stub("p")
-      val l = line("(p -> q -> v) and p", rightRule, List(ref))
-      rightRule.check(l.formula, l.refs) match {
-        case List(FormulaDoesntMatchRule(_)) =>
-        case l => println(s"wow: $l")
-      }
-    }
-  }
-
   def orElim: Unit = {
     val rule = OrElim()
 
