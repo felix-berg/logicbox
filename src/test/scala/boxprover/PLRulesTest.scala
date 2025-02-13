@@ -270,4 +270,29 @@ class PLRulesTest extends AnyFunSpec {
       }
     }
   }
+
+  describe("ImplicationElim") {
+    val rule = ImplicationElim()
+    it("should reject if first ref doesn't match lhs of second") {
+      val (r0, r1) = (stub("p"), stub("r -> q"))
+      val l = line("q", rule, List(r0, r1))
+      rule.check(l.formula, l.refs) should matchPattern {
+        case List(ReferencesMismatch(List(0, 1), _)) => 
+      }
+    }
+    it("should reject when formula is not rhs of second ref") {
+      val (r0, r1) = (stub("p"), stub("p -> q"))
+      val l = line("r", rule, List(r0, r1))
+      rule.check(l.formula, l.refs) should matchPattern {
+        case List(FormulaDoesntMatchReference(1, _)) => 
+      }
+    }
+    it("should reject when second ref is conjunction") {
+      val (r0, r1) = (stub("p"), stub("p and q"))
+      val l = line("q", rule, List(r0, r1))
+      rule.check(l.formula, l.refs) should matchPattern {
+        case List(ReferenceDoesntMatchRule(1, _)) => 
+      }
+    }
+  }
 }

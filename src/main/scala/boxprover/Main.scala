@@ -83,34 +83,6 @@ object TestPropLogic {
     }
   }
 
-  def implicationElim = {
-    val rule = ImplicationElim()
-    {
-      val (r0, r1) = (stub("p"), stub("r -> q"))
-      val l = line("q", rule, List(r0, r1))
-      rule.check(l.formula, l.refs) match {
-        case List(ReferencesMismatch(List(0, 1), _)) => 
-        case s => println(s"huh: $s")
-      }
-    }
-    {
-      val (r0, r1) = (stub("p"), stub("p -> q"))
-      val l = line("r", rule, List(r0, r1))
-      rule.check(l.formula, l.refs) match {
-        case List(FormulaDoesntMatchReference(1, _)) => 
-        case s => println(s"huh: $s")
-      }
-    }
-    {
-      val (r0, r1) = (stub("p"), stub("p and q"))
-      val l = line("q", rule, List(r0, r1))
-      rule.check(l.formula, l.refs) match {
-        case List(ReferenceDoesntMatchRule(1, _)) => 
-        case s => println(s"huh: $s")
-      }
-    }
-  }
-
   def notIntro = {
     val rule = NotIntro()
     {
