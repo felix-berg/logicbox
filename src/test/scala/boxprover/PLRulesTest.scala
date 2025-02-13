@@ -3,6 +3,7 @@ package boxprover
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should._
 import org.scalatest.matchers.should.Matchers._
+import org.scalatest.Inspectors
 import java.lang.ref.Reference
 
 class PLRulesTest extends AnyFunSpec {
@@ -42,7 +43,7 @@ class PLRulesTest extends AnyFunSpec {
     it("should copy lhs of conjunction") {
       val ref = stub("p and (q or p and q -> r -> not not not (not p or r -> q))")
       val l = line("p", leftRule, List(ref))
-      assert(leftRule.check(l.formula, List(ref)) ===  Nil)
+      leftRule.check(l.formula, List(ref)) should be (Nil)
     }
 
     it("should reject disjunction (doesn't match rule, left)") {
@@ -129,4 +130,79 @@ class PLRulesTest extends AnyFunSpec {
       }
     }
   }
+
+  describe("PropLogicRules::OrElim") {
+    val rule = OrElim()
+    it("should reject when first ref is box") {
+      // r0 is not line
+      val (r0, r1, r2) = (boxStub("p or q", "s"), boxStub("p", "s"), boxStub("q", "s"))
+      val l = line("s", rule, List(r0, r1, r2))
+      rule.check(l.formula, l.refs) match {
+        case List(ReferenceShouldBeLine(0, _)) =>
+        case l => println(s"wow: $l")
+      }
+    }
+
+    it("should reject when second ref is line") {
+      // r1 is not box
+      val (r0, r1, r2) = (stub("p or q"), stub("s"), boxStub("q", "s"))
+      val l = line("s", rule, List(r0, r1, r2))
+      rule.check(l.formula, l.refs) match {
+        case List(ReferenceShouldBeBox(1, _)) =>
+        case l => println(s"wow: $l")
+      }
+    }
+
+    it("should reject when third ref is line"){
+      // r2 is not box
+      val (r0, r1, r2) = (stub("p or q"), boxStub("p", "s"), stub("q"))
+      val l = line("s", rule, List(r0, r1, r2))
+      rule.check(l.formula, l.refs) match {
+        case List(ReferenceShouldBeBox(2, _)) =>
+        case l => println(s"wow: $l")
+      }
+    }
+  
+    it("should reject implication (should be or)") {
+      val (r0, r1, r2) = (stub("p -> q"), boxStub("p", "s"), boxStub("q", "s"))
+      val l = line("s", rule, List(r0, r1, r2))
+      rule.check(l.formula, l.refs) match {
+        case List(ReferenceDoesntMatchRule(0, _)) =>
+        case l => println(s"wow: $l")
+      }
+    }
+
+    it("should reject incorrect conclusion (third ref)") {
+      val refs = List(stub("p or q"), boxStub("p", "s"), boxStub("q", "d"))
+      val l = line("s", rule, refs)
+      val mms = rule.check(l.formula, l.refs)
+      Inspectors.forAtLeast(1, mms) {
+        _ should matchPattern {
+          case ReferencesMismatch(List(1, 2), _) =>
+        }
+      }
+      Inspectors.forAtLeast(1, mms) {
+        _ should matchPattern {
+          case FormulaDoesntMatchReference(2, _) =>
+        }
+      }
+    }
+
+    it("should reject incorrect conclusion (second ref)") {
+      val refs = List(stub("p or q"), boxStub("p", "d"), boxStub("q", "s"))
+      val l = line("s", rule, refs)
+      val mms = rule.check(l.formula, l.refs)
+      Inspectors.forAtLeast(1, mms) {
+        _ should matchPattern {
+          case ReferencesMismatch(List(1, 2), _) =>
+        }
+      }
+      Inspectors.forAtLeast(1, mms) {
+        _ should matchPattern {
+          case FormulaDoesntMatchReference(1, _) =>
+        }
+      }
+    }
+  }
+
 }
