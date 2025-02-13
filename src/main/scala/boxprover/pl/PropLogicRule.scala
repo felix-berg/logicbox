@@ -34,6 +34,19 @@ object PropLogicRule {
       List(WrongNumberOfReferences(exp, refs.length))
     else Nil
 
+  private def extractNFormulasAndThen(refs: List[ProofStep[PLFormula]], n: Int)
+    (func: PartialFunction[List[PLFormula], List[Mismatch]]): List[Mismatch] = 
+  {
+    checkCorrectNumberOfRefs(refs, n) ++ {extractFormulas(refs) match {
+      case Left(fs) if fs.length == n => 
+        assert(func.isDefinedAt(fs))
+        func(fs)
+
+      case Right(mismatches) => mismatches
+      case _ => Nil // something happened which is handled above
+    }}
+  }
+
   class NullRule extends PropLogicRule {
     def check(formula: PLFormula, refs: List[ProofStep[PLFormula]]): List[Mismatch] = Nil
   }
@@ -42,7 +55,7 @@ object PropLogicRule {
   case class Assumption() extends NullRule
 
   case class AndElim(side: Side) extends PropLogicRule {
-    private def checkMatchesRef(formula: PLFormula, ref: PLFormula): List[Mismatch] = ref match {
+    private def checkImpl(formula: PLFormula, ref: PLFormula): List[Mismatch] = ref match {
       case And(lhs, rhs) => side match {
         case Side.Left => 
           if (lhs != formula) List(
@@ -61,13 +74,8 @@ object PropLogicRule {
     }
 
     override def check(formula: PLFormula, refs: List[ProofStep[PLFormula]]): List[Mismatch] = {
-      checkCorrectNumberOfRefs(refs, 1) ++ {
-        (extractFormulas(refs): @unchecked) match {
-          case Left(List(ref)) =>
-            checkMatchesRef(formula, ref)
-          case Right(mismatches) => 
-            mismatches
-        }
+      extractNFormulasAndThen(refs, 1) {
+        case List(ref) => checkImpl(formula, ref)
       }
     }
   }
