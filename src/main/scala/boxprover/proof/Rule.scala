@@ -1,10 +1,11 @@
 package boxprover
 
-trait Violation {
+trait ViolationTrait {
   def expl: String
 }
 
 trait Rule[F] {
-  type V <: Violation
-  def check(formula: F, refs: List[ProofStep[F]]): List[V]
+  type RuleSet <: Rule[F]
+  type Violation <: ViolationTrait
+  def check(formula: F, refs: List[ProofStep[F, RuleSet]]): List[Violation]
 }

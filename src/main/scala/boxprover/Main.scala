@@ -1,16 +1,13 @@
 package boxprover
 
-trait Verifier[F, R <: Rule[F]] {
-}
+import java.util.UUID
 
-object PropLogicVerifier extends Verifier[PLFormula, PropLogicRule] {
-
-}
-
-class IdAbleProofLine[F](override val formula: F, override val rule: Rule[F], override val refs: List[ProofStep[F]]) 
-  extends ProofLine[F](formula, rule, refs)
+class IdAbleProofLine[F, R <: Rule[F]](override val formula: F, override val rule: Rule[F], override val refs: List[ProofStep[F, R]]) 
+  extends ProofLine[F, R](formula, rule, refs)
 {
-  
+  private val uuid = UUID.randomUUID().toString
+
+  def getId: String = uuid
 }
 
 object Main extends PLParser {

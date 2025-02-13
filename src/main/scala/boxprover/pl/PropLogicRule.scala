@@ -1,7 +1,8 @@
 package boxprover
 
 sealed trait PropLogicRule extends Rule[PLFormula] {
-  type V = PropLogicViolation
+  type RuleSet = PropLogicRule
+  type Violation = PropLogicViolation
 }
 
 object PropLogicRule {
@@ -9,33 +10,33 @@ object PropLogicRule {
   import PropLogicViolation.*
 
   enum Side { case Left; case Right }
-
-  type Violation = PropLogicViolation
+  type Step = ProofStep[PLFormula, PropLogicRule]
+  type Viol = PropLogicRule#Violation
 
   // try to extract a list of `n` formulas from `refs` (only if there are `n`).
   // otherwise report mismatches
 
   private enum BoxOrLine { case Box; case Line }
-  private def extractAndThen(refs: List[ProofStep[PLFormula]], pattern: Seq[BoxOrLine]) 
-    (func: PartialFunction[List[ProofStep[PLFormula]], List[Violation]]): List[Violation] = 
+  private def extractAndThen(refs: List[Step], pattern: Seq[BoxOrLine]) 
+    (func: PartialFunction[List[Step], List[Viol]]): List[Viol] = 
   {
-    def checkLengthMatches(refs: Seq[_], pattern: Seq[_]): List[Violation] = {
+    def checkLengthMatches(refs: Seq[_], pattern: Seq[_]): List[Viol] = {
       if (refs.length != pattern.length) List(
         WrongNumberOfReferences(pattern.length, refs.length)
       ) else Nil
     }
 
-    def extract(refs: List[ProofStep[PLFormula]], pattern: Seq[BoxOrLine]): Either[List[ProofStep[PLFormula]], List[Violation]] = {
+    def extract(refs: List[Step], pattern: Seq[BoxOrLine]): Either[List[Step], List[Viol]] = {
       val zp = refs.zipWithIndex.zip(pattern).map { case ((ref, idx), pattern) => (idx, pattern, ref)}
 
       val result = zp.map {
         // matches
-        case (_, BoxOrLine.Line, line: ProofLine[_]) => Left(line) 
-        case (_, BoxOrLine.Box, box: ProofBox[_, _]) => Left(box)
+        case (_, BoxOrLine.Line, line: ProofLine[_, _]) => Left(line) 
+        case (_, BoxOrLine.Box, box: ProofBox[_, _, _]) => Left(box)
 
         // violations
-        case (idx, BoxOrLine.Box, line: ProofLine[_]) => Right(ReferenceShouldBeBox(idx))
-        case (idx, BoxOrLine.Line, box: ProofBox[_, _]) => Right(ReferenceShouldBeLine(idx))
+        case (idx, BoxOrLine.Box, line: ProofLine[_, _]) => Right(ReferenceShouldBeBox(idx))
+        case (idx, BoxOrLine.Line, box: ProofBox[_, _, _]) => Right(ReferenceShouldBeLine(idx))
       }
 
       val good = result.forall {
@@ -54,7 +55,7 @@ object PropLogicRule {
 
     checkLengthMatches(refs, pattern) ++ { 
       extract(refs, pattern) match {
-        case Left(ls: List[ProofStep[PLFormula]]) =>
+        case Left(ls: List[Step]) =>
           assert(func.isDefinedAt(ls), s"Partial function is defined on given pattern $pattern")
           func.apply(ls)
         case Right(mismatches) => mismatches
@@ -62,18 +63,17 @@ object PropLogicRule {
     }
   }
 
-  private def extractNFormulasAndThen(refs: List[ProofStep[PLFormula]], n: Int)
-    (func: PartialFunction[List[PLFormula], List[Violation]]): List[Violation] = 
+  private def extractNFormulasAndThen(refs: List[Step], n: Int)
+    (func: PartialFunction[List[PLFormula], List[Viol]]): List[Viol] = 
   {
     extractAndThen(refs, (1 to n).map { s => BoxOrLine.Line }) {
-      case lines: List[ProofLine[PLFormula]] @unchecked => 
+      case lines: List[ProofLine[PLFormula, PropLogicRule]] @unchecked => 
         func.apply(lines.map(_.formula))
     }
   }
-  
 
   class NullRule extends PropLogicRule {
-    def check(formula: PLFormula, refs: List[ProofStep[PLFormula]]): List[Violation] = Nil
+    def check(formula: PLFormula, refs: List[ProofStep[PLFormula, PropLogicRule]]): List[Violation] = ???
   }
 
   case class Premise() extends NullRule
@@ -98,7 +98,7 @@ object PropLogicRule {
       )
     }
 
-    override def check(formula: PLFormula, refs: List[ProofStep[PLFormula]]): List[Violation] = {
+    override def check(formula: PLFormula, refs: List[Step]): List[Violation] = {
       extractNFormulasAndThen(refs, 1) {
         case List(ref) => checkImpl(formula, ref)
       }
@@ -121,7 +121,7 @@ object PropLogicRule {
         case _ => List(FormulaDoesntMatchRule("must be a conjunction (and)"))
       }
 
-    override def check(formula: PLFormula, refs: List[ProofStep[PLFormula]]): List[Violation] = {
+    override def check(formula: PLFormula, refs: List[Step]): List[Violation] = {
       extractNFormulasAndThen(refs, 2) {
         case List(r0, r1) => checkImpl(formula, r0, r1)
       }
@@ -143,7 +143,7 @@ object PropLogicRule {
       case _ => List(FormulaDoesntMatchRule("must be a disjunction (or)"))
     }
 
-    override def check(formula: PLFormula, refs: List[ProofStep[PLFormula]]): List[Violation] = {
+    override def check(formula: PLFormula, refs: List[Step]): List[Violation] = {
       extractNFormulasAndThen(refs, 1) {
         case List(ref) => checkImpl(formula, ref)
       }
@@ -188,15 +188,15 @@ object PropLogicRule {
       }
     }
 
-    def check(formula: PLFormula, refs: List[ProofStep[PLFormula]]): List[Violation] = {
+    def check(formula: PLFormula, refs: List[Step]): List[Violation] = {
       import BoxOrLine._
       val pattern = List(Line, Box, Box)
 
       extractAndThen(refs, pattern)  {
         case List(
           ProofLine(r0: PLFormula, _, _), 
-          r1: ProofBox[PLFormula, _] @unchecked, 
-          r2: ProofBox[PLFormula, _] @unchecked) => 
+          r1: ProofBox[PLFormula, _, _] @unchecked, 
+          r2: ProofBox[PLFormula, _, _] @unchecked) => 
           List(r1, r2).map(extractAssumptionConclusion) match {
             case List(Left(p1), Left(p2)) => 
               checkImpl(formula, r0, p1, p2)
@@ -218,7 +218,7 @@ object PropLogicRule {
     case ls => Some(ls.head, ls.last)
   }
 
-  def extractAssumptionConclusion(box: ProofBox[PLFormula, _]): Either[(PLFormula, PLFormula), List[Violation]] = {
+  def extractAssumptionConclusion(box: ProofBox[PLFormula, _, _]): Either[(PLFormula, PLFormula), List[Viol]] = {
     firstAndLast(box.proof) match {
       case None => Right(List(MiscellaneousViolation("box is empty")))
 
@@ -230,12 +230,12 @@ object PropLogicRule {
       ))
 
       case Some(ass, concl) => Right({ ass match {
-        case _: ProofBox[_, _] => List(
+        case _: ProofBox[_, _, _] => List(
           MiscellaneousViolation("assumption must be a line")
         )
         case _ => Nil
       }} ++ { concl match {
-        case _: ProofBox[_, _] => List(
+        case _: ProofBox[_, _, _] => List(
           MiscellaneousViolation("conclusion must be a line")
         )
         case _ => Nil
@@ -260,9 +260,9 @@ object PropLogicRule {
       }
     }
 
-    def check(formula: PLFormula, refs: List[ProofStep[PLFormula]]): List[Violation] = {
+    def check(formula: PLFormula, refs: List[Step]): List[Violation] = {
       extractAndThen(refs, List(BoxOrLine.Box)) {
-        case List(box: ProofBox[PLFormula, _] @unchecked) => 
+        case List(box: ProofBox[PLFormula, _, _] @unchecked) => 
           extractAssumptionConclusion(box) match {
             case Right(mms) => mms
             case Left(asmp, concl) => checkMatchesBox(formula, asmp, concl)
@@ -287,7 +287,7 @@ object PropLogicRule {
         )
       }
 
-    override def check(formula: PLFormula, refs: List[ProofStep[PLFormula]]): List[Violation] = {
+    override def check(formula: PLFormula, refs: List[Step]): List[Violation] = {
       extractNFormulasAndThen(refs, 2) {
         case List(r0, r1) =>
           checkMatchesRef(formula, r0, r1)
@@ -312,9 +312,9 @@ object PropLogicRule {
       }
     }}
       
-    override def check(formula: PLFormula, refs: List[ProofStep[PLFormula]]): List[Violation] = {
+    override def check(formula: PLFormula, refs: List[Step]): List[Violation] = {
       extractAndThen(refs, List(BoxOrLine.Box)) {
-        case List(box: ProofBox[PLFormula, _] @unchecked) => 
+        case List(box: ProofBox[PLFormula, _, _] @unchecked) => 
           extractAssumptionConclusion(box) match {
             case Left(asmp, concl) => checkImpl(formula, asmp, concl)
             case Right(mms) => mms
@@ -340,14 +340,14 @@ object PropLogicRule {
       }}
     }
 
-    override def check(formula: PLFormula, refs: List[ProofStep[PLFormula]]): List[Violation] = 
+    override def check(formula: PLFormula, refs: List[Step]): List[Violation] = 
       extractNFormulasAndThen(refs, 2) {
         case List(r0, r1) => checkImpl(formula, r0, r1)
       }
   }
 
   case class ContradictionElim() extends PropLogicRule {
-    override def check(formula: PLFormula, refs: List[ProofStep[PLFormula]]): List[Violation] = {
+    override def check(formula: PLFormula, refs: List[Step]): List[Violation] = {
       extractNFormulasAndThen(refs, 1) {
         case List(r0) =>
           if (r0 != Contradiction()) List(
@@ -358,7 +358,7 @@ object PropLogicRule {
   }
 
   case class NotNotElim() extends PropLogicRule {
-    override def check(formula: PLFormula, refs: List[ProofStep[PLFormula]]): List[Violation] = {
+    override def check(formula: PLFormula, refs: List[Step]): List[Violation] = {
       extractNFormulasAndThen(refs, 1) {
         case List(Not(Not(phi))) => 
           if (formula != phi) List(
@@ -404,7 +404,7 @@ object PropLogicRule {
       }
     }
 
-    override def check(formula: PLFormula, refs: List[ProofStep[PLFormula]]): List[Violation] = {
+    override def check(formula: PLFormula, refs: List[Step]): List[Violation] = {
       extractNFormulasAndThen(refs, 2) {
         case List(r0, r1) => checkImpl(formula, r0, r1)
       }
@@ -424,7 +424,7 @@ object PropLogicRule {
       }
     }
 
-    override def check(formula: PLFormula, refs: List[ProofStep[PLFormula]]): List[Violation] = {
+    override def check(formula: PLFormula, refs: List[Step]): List[Violation] = {
       extractNFormulasAndThen(refs, 1) {
         case List(ref) => checkImpl(formula, ref)
       }
@@ -445,9 +445,9 @@ object PropLogicRule {
       }}
     }
 
-    override def check(formula: PLFormula, refs: List[ProofStep[PLFormula]]): List[Violation] = {
+    override def check(formula: PLFormula, refs: List[Step]): List[Violation] = {
       extractAndThen(refs, List(BoxOrLine.Box)) {
-        case List(box: ProofBox[PLFormula, _] @unchecked) => 
+        case List(box: ProofBox[PLFormula, _, _] @unchecked) => 
           extractAssumptionConclusion(box) match {
             case Left(asmp, concl) => checkImpl(formula, asmp, concl)
             case Right(mms) => mms
@@ -457,7 +457,7 @@ object PropLogicRule {
   }
 
   case class LawOfExcludedMiddle() extends PropLogicRule {
-    override def check(formula: PLFormula, refs: List[ProofStep[PLFormula]]): List[Violation] = {
+    override def check(formula: PLFormula, refs: List[Step]): List[Violation] = {
       extractNFormulasAndThen(refs, 0) {
         case Nil =>
           formula match {
@@ -469,7 +469,7 @@ object PropLogicRule {
   }
 
   case class Copy() extends PropLogicRule {
-    override def check(formula: PLFormula, refs: List[ProofStep[PLFormula]]): List[Violation] = {
+    override def check(formula: PLFormula, refs: List[Step]): List[Violation] = {
       extractNFormulasAndThen(refs, 1) {
         case List(ref) => 
           if (ref != formula) List(

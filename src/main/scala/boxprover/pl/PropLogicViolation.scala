@@ -1,6 +1,6 @@
 package boxprover
 
-sealed trait PropLogicViolation extends Violation
+sealed trait PropLogicViolation extends ViolationTrait
 
 object PropLogicViolation {
   case class WrongNumberOfReferences(exp: Int, actual: Int, expl: String = "") extends PropLogicViolation

@@ -14,7 +14,7 @@ class PropLogicRulesTest extends AnyFunSpec {
   private val parser = PLParser()
   private def parse(str: String): PLFormula = parser(lexer(str))
 
-  private def line(formula: String, rule: Rule[PLFormula], refs: List[ProofStep[PLFormula]]): ProofLine[PLFormula] = {
+  private def line(formula: String, rule: Rule[PLFormula], refs: List[ProofStep[PLFormula, PropLogicRule]]): ProofLine[PLFormula, PropLogicRule] = {
     ProofLine(
       formula = parse(formula),
       rule = rule,
@@ -22,17 +22,14 @@ class PropLogicRulesTest extends AnyFunSpec {
     )
   }
 
-  private def stub(formula: String): ProofStep[PLFormula] =
+  private def stub(formula: String): ProofStep[PLFormula, PropLogicRule] =
     ProofLine(
       formula = parse(formula),
-      rule = new Rule[PLFormula] {
-        type V = PropLogicViolation
-        def check(formula: PLFormula, refs: List[ProofStep[PLFormula]]): List[Violation] = Nil
-      },
+      rule = new PropLogicRule.NullRule {},
       refs = Nil
     )
 
-  private def boxStub(ass: String, concl: String): ProofBox[PLFormula, Unit] = ProofBox(
+  private def boxStub(ass: String, concl: String): ProofBox[PLFormula, PropLogicRule, _] = ProofBox(
     info = (), proof = List(
       ProofLine(parse(ass), Assumption(), Nil),
       stub(concl)
@@ -299,9 +296,9 @@ class PropLogicRulesTest extends AnyFunSpec {
   }
 
   describe("extractAssumptionConclusionTest (helper function)") {
-    val emptybox = ProofBox(info = (), proof = (Nil: List[ProofStep[PLFormula]]))
+    val emptybox = ProofBox(info = (), proof = (Nil: List[ProofStep[PLFormula, PropLogicRule]]))
     it("should reject empty box") {
-      val box = ProofBox(info = (), proof = (Nil: List[ProofStep[PLFormula]]))
+      val box = emptybox
       PropLogicRule.extractAssumptionConclusion(box) should matchPattern {
         case Right(List(MiscellaneousViolation(_))) => 
       }

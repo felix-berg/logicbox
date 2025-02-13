@@ -1,18 +1,18 @@
 package boxprover
 
-import boxprover.Violation
+import boxprover.ViolationTrait
 
-sealed trait ProofStep[+Formula]
+sealed trait ProofStep[+F, +R <: Rule[F]]
 
-class ProofLine[F](val formula: F, val rule: Rule[F], val refs: List[ProofStep[F]]) extends ProofStep[F]
+class ProofLine[F, R <: Rule[F]](val formula: F, val rule: Rule[F], val refs: List[ProofStep[F, R]]) extends ProofStep[F, R]
 object ProofLine {
-  def unapply[F](line: ProofLine[F]): Option[(F, Rule[F], List[ProofStep[F]])] =
+  def unapply[F, R <: Rule[F]](line: ProofLine[F, R]): Option[(F, Rule[F], List[ProofStep[F, R]])] =
     Some(line.formula, line.rule, line.refs)
 }
 
-class ProofBox[F, +I](val info: I, val proof: Proof[F]) extends ProofStep[F]
+class ProofBox[F, R <: Rule[F], +I](val info: I, val proof: Proof[F, R]) extends ProofStep[F, R]
 object ProofBox {
-  def unapply[F, I](box: ProofBox[F, I]): Option[(I, Proof[F])] = Some (box.info, box.proof)
+  def unapply[F, R <: Rule[F], I](box: ProofBox[F, R, I]): Option[(I, Proof[F, R])] = Some (box.info, box.proof)
 }
 
-type Proof[+F] = List[ProofStep[F]]
+type Proof[+F, +R <: Rule[F]] = List[ProofStep[F, R]]
