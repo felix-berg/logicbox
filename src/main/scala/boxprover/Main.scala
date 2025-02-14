@@ -2,15 +2,18 @@ package boxprover
 
 import scala.sys.Prop
 
-trait Verifier[F, R <: Rule.WithTypes[F, V], V] {
-  def verify(proof: Proof[F, R]): List[(ProofStep[F, R], V)]
+trait Verifier[F, R <: Rule[F]] {
+  type Result
+  def verify(proof: Proof[F, R]): Result
 }
 
-case class PLVerifier() extends Verifier[PLFormula, PropLogicRule, PropLogicViolation] {
+case class PLVerifier() extends Verifier[PLFormula, PropLogicRule] {
   type Rle = PropLogicRule
   type Form = PLFormula
   type Viol = PropLogicViolation
   type Step = ProofStep[Form, Rle]
+
+  type Result = List[(Step, Viol)]
 
   override def verify(proof: Proof[Form, Rle]): List[(Step, Viol)] = {
     proof.flatMap { step => (step: @unchecked) match {
@@ -23,5 +26,6 @@ case class PLVerifier() extends Verifier[PLFormula, PropLogicRule, PropLogicViol
 
 object Main extends PLParser {
   def main(args: Array[String]): Unit = {
+    
   }
 }
