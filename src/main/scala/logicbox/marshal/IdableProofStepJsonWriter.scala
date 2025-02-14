@@ -3,15 +3,13 @@ package logicbox.marshal
 import spray.json._
 import logicbox.framework.IdableProof
 
-case class IdableProofStepJsonFormat[F, R](
+case class IdableProofStepJsonWriter[F, R](
   ruleToName: R => String,
   formulaToASCII: F => String,
   formulaToLaTeX: F => String,
-  proofFormat: JsonFormat[IdableProof[F, R]]
-) extends JsonFormat[IdableProof.Step[F, R]] 
+  proofFormat: JsonWriter[IdableProof[F, R]]
+) extends JsonWriter[IdableProof.Step[F, R]] 
 {
-  override def read(json: JsValue): IdableProof.Step[F, R] = ???
-
   private def writeRefs(refs: List[IdableProof.Step[F, R]]): JsValue = 
     JsArray.apply(refs.map(r => JsString(r.id)))
 

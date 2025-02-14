@@ -18,8 +18,7 @@ class IdableProofStepJsonFormatTest extends AnyFunSpec {
   private def formulaToASCII(f: StubFormula) = f.asASCII
   private def formulaToLaTeX(f: StubFormula) = f.asLaTeX
 
-  case class StubProofFormat(var writeResult: JsValue = JsNull, var readResult: IdableProof[StubFormula, StubRule] = null) extends JsonFormat[IdableProof[StubFormula, StubRule]] {
-    override def read(json: JsValue): IdableProof[StubFormula, StubRule] = readResult
+  case class StubProofWriter(var writeResult: JsValue = JsNull) extends JsonWriter[IdableProof[StubFormula, StubRule]] {
     override def write(obj: IdableProof[StubFormula, StubRule]): JsValue = { println(writeResult); writeResult }
   }
 
@@ -31,9 +30,9 @@ class IdableProofStepJsonFormatTest extends AnyFunSpec {
   private def stubBox(id: String, proof: IdableProof[StubFormula, StubRule]): IdableProof.Box[StubFormula, StubRule, _] =
     IdableProofImpl.Box(id, (), proof)
 
-  val stubProofFormat = StubProofFormat()
-  val format: JsonFormat[IdableProof.Step[StubFormula, StubRule]] = 
-    IdableProofStepJsonFormat(ruleToName, formulaToASCII, formulaToLaTeX, stubProofFormat)
+  val stubProofWriter = StubProofWriter()
+  val format: JsonWriter[IdableProof.Step[StubFormula, StubRule]] = 
+    IdableProofStepJsonWriter(ruleToName, formulaToASCII, formulaToLaTeX, stubProofWriter)
 
   describe("IdableProofStepJsonFormat::write") {
     it("should marshal line with no refs correctly, LaTeX should be escaped") {
@@ -90,7 +89,7 @@ class IdableProofStepJsonFormatTest extends AnyFunSpec {
       )
 
       val preparedJson = JsArray(List(JsString("THIS IS A TEST")))
-      stubProofFormat.writeResult = preparedJson
+      stubProofWriter.writeResult = preparedJson
 
       val box = stubBox(id, proof)
 

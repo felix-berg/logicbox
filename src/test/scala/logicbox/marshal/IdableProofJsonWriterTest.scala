@@ -9,7 +9,7 @@ import logicbox.framework.IdableProof
 import spray.json._
 import logicbox.framework.IdableProof.Step
 
-class IdableProofJsonFormatTest extends AnyFunSpec {
+class IdableProofJsonWriterTest extends AnyFunSpec {
   case class StubFormula()
   case class StubRule()
 
@@ -22,16 +22,15 @@ class IdableProofJsonFormatTest extends AnyFunSpec {
 
   def doNothing(): JsValue = JsNull
   case class StubProofStepFormat() 
-    extends JsonFormat[IdableProof.Step[StubFormula, StubRule]] 
+    extends JsonWriter[IdableProof.Step[StubFormula, StubRule]] 
   {
-    override def read(json: JsValue): Step[StubFormula, StubRule] = ???
     override def write(obj: Step[StubFormula, StubRule]): JsValue = JsString(obj.id)
   }
 
   val stubStepFormat = StubProofStepFormat()
-  val format: JsonFormat[IdableProof[StubFormula, StubRule]] = IdableProofJsonFormat(stubStepFormat)
+  val format: JsonWriter[IdableProof[StubFormula, StubRule]] = IdableProofJsonFormat(stubStepFormat)
 
-  describe("IdableProofJsonFormat::write") {
+  describe("IdableProofJsonWriter::write") {
     it("should marshall empty proof") {
       format.write(Nil) shouldBe JsArray()
     }
