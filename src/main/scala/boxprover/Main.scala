@@ -23,7 +23,5 @@ case class PLVerifier() extends Verifier[PLFormula, PropLogicRule, PropLogicViol
 
 object Main extends PLParser {
   def main(args: Array[String]): Unit = {
-    def line(f: String, rule: PropLogicRule, refs: List[ProofStep[PLFormula, PropLogicRule]]): ProofLine[PLFormula, PropLogicRule] =
-      ProofLine(PLParser()(PLLexer()(f)), rule, refs)
   }
 }
