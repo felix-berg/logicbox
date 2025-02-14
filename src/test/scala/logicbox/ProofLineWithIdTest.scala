@@ -1,7 +1,6 @@
-package boxprover
+package logicbox
 
-
-import logicbox.framework.Proof
+import framework.Proof
 import logicbox.ProofLineWithId
 
 import org.scalatest.funspec.AnyFunSpec
@@ -56,6 +55,11 @@ class ProofLineWithIdTest extends AnyFunSpec {
       assert(HashSet(pl4, pl1).size == 2)
       assert(HashSet(pl1, pl5).size == 2)
       assert(HashSet(pl5, pl1).size == 2)
+    }
+
+    it("toString should print the id") {
+      pl1.toString should include ("id1")
+      pl4.toString should include ("id2")
     }
   }
 }

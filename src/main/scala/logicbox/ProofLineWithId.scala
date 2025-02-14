@@ -15,4 +15,5 @@ class ProofLineWithId[F, R](
     case _ => false
   }
   override def hashCode: Int = Objects.hash(super.hashCode, id)
+  override def toString: String = s"[id: $id, ${super.toString}]"
 }

@@ -1,4 +1,4 @@
-package boxprover
+package logicbox
 
 import logicbox.framework.{Proof}
 import logicbox.pl.*
