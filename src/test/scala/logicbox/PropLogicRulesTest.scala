@@ -1,6 +1,7 @@
 package boxprover
 
-import logicbox.framework.{ProofBox, ProofLine, Step}
+import logicbox.framework.{Proof}
+import logicbox.pl.*
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.*
 import org.scalatest.matchers.should.Matchers.*
@@ -9,30 +10,30 @@ import org.scalatest.Inspectors
 class PropLogicRulesTest extends AnyFunSpec {
   import PropLogicRule._
   import PropLogicViolation._
-  import boxprover.PLFormula
+  import Proof.Step
 
   private val lexer = PLLexer()
   private val parser = PLParser()
   private def parse(str: String): PLFormula = parser(lexer(str))
 
-  private def line(formula: String, rule: PropLogicRule, refs: List[Step[PLFormula, PropLogicRule]]): ProofLine[PLFormula, PropLogicRule] = {
-    ProofLine(
+  private def line(formula: String, rule: PropLogicRule, refs: List[Step[PLFormula, PropLogicRule]]): Proof.Line[PLFormula, PropLogicRule] = {
+    Proof.Line(
       formula = parse(formula),
       rule = rule,
       refs = refs
     )
   }
 
-  private def stub(formula: String): ProofLine[PLFormula, PropLogicRule] =
-    ProofLine(
+  private def stub(formula: String): Proof.Line[PLFormula, PropLogicRule] =
+    Proof.Line(
       formula = parse(formula),
       rule = null,
       refs = Nil
     )
 
-  private def boxStub(ass: String, concl: String): ProofBox[PLFormula, PropLogicRule, _] = ProofBox(
+  private def boxStub(ass: String, concl: String): Proof.Box[PLFormula, PropLogicRule, _] = Proof.Box(
     info = (), proof = List(
-      ProofLine(parse(ass), Assumption(), Nil),
+      Proof.Line(parse(ass), Assumption(), Nil),
       stub(concl)
     )
   )
@@ -297,7 +298,7 @@ class PropLogicRulesTest extends AnyFunSpec {
   }
 
   describe("extractAssumptionConclusionTest (helper function)") {
-    val emptybox = ProofBox(info = (), proof = (Nil: List[Step[PLFormula, PropLogicRule]]))
+    val emptybox = Proof.Box(info = (), proof = (Nil: List[Step[PLFormula, PropLogicRule]]))
     it("should reject empty box") {
       val box = emptybox
       PropLogicRule.extractAssumptionConclusion(box) should matchPattern {
@@ -305,15 +306,15 @@ class PropLogicRulesTest extends AnyFunSpec {
       }
     }
     it("should reject box where first line is not assumption") {
-      val assmp = ProofLine(parse("p"), Premise(), Nil) // not assumption
+      val assmp = Proof.Line(parse("p"), Premise(), Nil) // not assumption
       val concl = stub("q")
-      val box = ProofBox(info = (), proof = List(assmp, concl): List[Step])
+      val box = Proof.Box(info = (), proof = List(assmp, concl): List[Step[PLFormula, PropLogicRule]])
       PropLogicRule.extractAssumptionConclusion(box) should matchPattern {
         case Right(List(MiscellaneousViolation(_))) => 
       }
     }
     it("should reject box where first line is a box") {
-      val box = ProofBox(info = (), proof = List(
+      val box = Proof.Box(info = (), proof = List(
         emptybox,
         stub("q")
       ))
@@ -322,8 +323,8 @@ class PropLogicRulesTest extends AnyFunSpec {
       }
     }
     it("should reject box where last line is a box") {
-      val box = ProofBox(info = (), proof = List(
-        ProofLine(parse("p"), Assumption(), Nil),
+      val box = Proof.Box(info = (), proof = List(
+        Proof.Line(parse("p"), Assumption(), Nil),
         emptybox
       ))
       PropLogicRule.extractAssumptionConclusion(box) should matchPattern {
@@ -564,12 +565,12 @@ class PropLogicRulesTest extends AnyFunSpec {
 //   val l7 = line("s", ImplicationElim(), List(l5, l2))
 //   val l8 = line("q and s", AndIntro(), List(l6, l7))
 //
-//   val box = ProofBox(info = (), proof = List(l3, l4, l5, l6, l7, l8))
+//   val box = Proof.Box(info = (), proof = List(l3, l4, l5, l6, l7, l8))
 //   val l9 = line("p and r -> q and s", ImplicationIntro(), List(box))
 //
 //   def checkProof(p: Proof[PLFormula]): List[(PLFormula, Mismatch)] = p.flatMap {
-//     case ProofLine(formula, rule, refs) => rule.check(formula, refs).map((formula, _))
-//     case ProofBox(_, proof) => checkProof(proof)
+//     case Proof.Line(formula, rule, refs) => rule.check(formula, refs).map((formula, _))
+//     case Proof.Box(_, proof) => checkProof(proof)
 //   }
 //
 //   val proof = List(l1, l2, box, l9)

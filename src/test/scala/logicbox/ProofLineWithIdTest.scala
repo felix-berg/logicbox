@@ -1,7 +1,9 @@
 package boxprover
 
 
-import logicbox.framework.ProofLine
+import logicbox.framework.Proof
+import logicbox.ProofLineWithId
+
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.*
 import org.scalatest.matchers.should.Matchers.*
@@ -14,7 +16,7 @@ class ProofLineWithIdTest extends AnyFunSpec {
   case class StubRule()
 
   describe("ProofLineWithId") {
-    type L = ProofLine[StubFormula, StubRule]
+    type L = Proof.Line[StubFormula, StubRule]
 
     val pl1: L = ProofLineWithId(StubFormula(1), StubRule(), Nil, "id1")
     val pl2: L = ProofLineWithId(StubFormula(1), StubRule(), Nil, "id1")

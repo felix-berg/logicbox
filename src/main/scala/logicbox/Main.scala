@@ -21,8 +21,16 @@ object Main extends PLParser {
 
     import PropLogicRule.*
 
-    def line(str: String, rule: R, refs: List[Step[F, R]]): Line[F, R] =
-      Proof.Line(PLParser()(PLLexer()(str)), rule, refs)
+    val generateId: () => String = {
+      var x: Int = 0
+      () => {
+        x = x + 1
+        x.toString
+      }
+    }
+
+    def line(str: String, rule: R, refs: List[Step[F, R]]): ProofLineWithId[F, R] =
+      ProofLineWithId(PLParser()(PLLexer()(str)), rule, refs, generateId())
 
     val checker: RuleChecker[F, R, V] = DelegatingRuleChecker[F, R, V]()
     val verifier = SimpleVerifier(checker)
@@ -40,8 +48,9 @@ object Main extends PLParser {
     val l9 = line("p and r -> q and s", ImplicationIntro(), List(box))
 
     val proof = List(l1, l2, box, l9)
-    verifier.verify(proof).foreach {
-      case VerifierResult(where, violation) => println(s"$where: $violation")
+    verifier.verify(proof).collect {
+      case VerifierResult(where: ProofLineWithId[_, _], violation) => 
+        println(s"${where.id}: $violation")
     }
   }
 }
