@@ -1,4 +1,5 @@
 val akkaVersion = "2.7.0"
+val akkaHttpVersion = "10.5.0"
 
 lazy val app = project.in(file("."))
   .settings(
@@ -15,6 +16,9 @@ lazy val app = project.in(file("."))
       // for HTTP
       "com.typesafe.akka" %% "akka-actor-typed" % akkaVersion,
       "com.typesafe.akka" %% "akka-stream-typed" % akkaVersion,
-      "com.typesafe.akka" %% "akka-http" % "10.5.0"
+      "com.typesafe.akka" %% "akka-http" % akkaHttpVersion,
+
+      // for JSON marshalling/unmarshalling
+      "com.typesafe.akka" %% "akka-http-spray-json" % akkaHttpVersion
     )
   )
