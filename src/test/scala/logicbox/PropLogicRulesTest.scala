@@ -1,8 +1,9 @@
 package boxprover
 
+import logicbox.framework.{ProofBox, ProofLine, Step}
 import org.scalatest.funspec.AnyFunSpec
-import org.scalatest.matchers.should._
-import org.scalatest.matchers.should.Matchers._
+import org.scalatest.matchers.should.*
+import org.scalatest.matchers.should.Matchers.*
 import org.scalatest.Inspectors
 
 class PropLogicRulesTest extends AnyFunSpec {
@@ -14,7 +15,7 @@ class PropLogicRulesTest extends AnyFunSpec {
   private val parser = PLParser()
   private def parse(str: String): PLFormula = parser(lexer(str))
 
-  private def line(formula: String, rule: PropLogicRule, refs: List[ProofStep[PLFormula, PropLogicRule]]): ProofLine[PLFormula, PropLogicRule] = {
+  private def line(formula: String, rule: PropLogicRule, refs: List[Step[PLFormula, PropLogicRule]]): ProofLine[PLFormula, PropLogicRule] = {
     ProofLine(
       formula = parse(formula),
       rule = rule,
@@ -296,7 +297,7 @@ class PropLogicRulesTest extends AnyFunSpec {
   }
 
   describe("extractAssumptionConclusionTest (helper function)") {
-    val emptybox = ProofBox(info = (), proof = (Nil: List[ProofStep[PLFormula, PropLogicRule]]))
+    val emptybox = ProofBox(info = (), proof = (Nil: List[Step[PLFormula, PropLogicRule]]))
     it("should reject empty box") {
       val box = emptybox
       PropLogicRule.extractAssumptionConclusion(box) should matchPattern {

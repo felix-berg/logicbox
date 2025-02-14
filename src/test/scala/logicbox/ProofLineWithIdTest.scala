@@ -1,10 +1,12 @@
 package boxprover
 
 
+import logicbox.framework.ProofLine
 import org.scalatest.funspec.AnyFunSpec
-import org.scalatest.matchers.should._
-import org.scalatest.matchers.should.Matchers._
+import org.scalatest.matchers.should.*
+import org.scalatest.matchers.should.Matchers.*
 import org.scalatest.Inspectors
+
 import scala.collection.immutable.HashSet
 
 class ProofLineWithIdTest extends AnyFunSpec {

@@ -1,16 +1,20 @@
-package boxprover
+package logicbox
 
-case class VerifierResult[F, R, V](where: ProofStep[F, R], violation: V)
+import logicbox.framework.{Proof, RuleChecker}
+import Proof.{Step, Line, Box}
+import logicbox.pl.*
+
+case class VerifierResult[F, R, V](where: Step[F, R], violation: V)
 trait Verifier[F, R, V] {
   def verify(proof: Proof[F, R]): List[VerifierResult[F, R, V]]
 }
 
-case class SimpleVerifier[F, R, V <: ViolationTrait, C <: RuleChecker[F, R, V]](checker: C) extends Verifier[F, R, V] {
+case class SimpleVerifier[F, R, V, C <: RuleChecker[F, R, V]](checker: C) extends Verifier[F, R, V] {
   def verify(proof: Proof[F, R]): List[VerifierResult[F, R, V]] =
     proof.flatMap {
-      case line @ ProofLine(formula, rule, refs) => 
+      case line @ Line(formula, rule, refs) => 
         checker.check(rule, formula, refs).map(violation => VerifierResult(line, violation))
-      case ProofBox(info, proof) => verify(proof)
+      case Box(info, proof) => verify(proof)
     }
 }
 
@@ -20,10 +24,10 @@ object Main extends PLParser {
     type R = PropLogicRule
     type V = PropLogicViolation
 
-    import PropLogicRule._
+    import PropLogicRule.*
 
-    def line(str: String, rule: R, refs: List[ProofStep[F, R]]): ProofLine[F, R] =
-      ProofLine(PLParser()(PLLexer()(str)), rule, refs)
+    def line(str: String, rule: R, refs: List[Step[F, R]]): Line[F, R] =
+      Proof.Line(PLParser()(PLLexer()(str)), rule, refs)
 
     val checker: RuleChecker[F, R, V] = DelegatingRuleChecker[F, R, V]()
     val verifier = SimpleVerifier(checker)
@@ -37,7 +41,7 @@ object Main extends PLParser {
     val l7 = line("s", ImplicationElim(), List(l5, l2))
     val l8 = line("q and r", AndIntro(), List(l6, l7))
 
-    val box = ProofBox(info = (), proof = List(l3, l4, l5, l6, l7, l8))
+    val box = Proof.Box(info = (), proof = List(l3, l4, l5, l6, l7, l8))
     val l9 = line("p and r -> q and s", ImplicationIntro(), List(box))
 
     val proof = List(l1, l2, box, l9)

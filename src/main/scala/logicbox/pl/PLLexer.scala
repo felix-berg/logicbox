@@ -1,4 +1,4 @@
-package boxprover
+package logicbox.pl
 
 import scala.util.parsing.combinator.RegexParsers
 import scala.util.parsing.input.{ Reader, Position, NoPosition }

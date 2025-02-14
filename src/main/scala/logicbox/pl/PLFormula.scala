@@ -1,9 +1,9 @@
-package boxprover
+package logicbox.pl
 
 sealed abstract class PLFormula {
   import PLFormula.*
 
-  override def toString(): String = this match {
+  override def toString: String = this match {
     case Contradiction() => "⊥"
     case Tautology() => "⊤"
     case Atom(c) => c.toString
@@ -23,18 +23,4 @@ object PLFormula {
   case class Or(phi: PLFormula, psi: PLFormula) extends PLFormula
   case class Implies(phi: PLFormula, psi: PLFormula) extends PLFormula
   case class Not(phi: PLFormula) extends PLFormula
-}
-
-sealed abstract class PLToken
-
-object PLToken {
-  case class LeftParen() extends PLToken
-  case class RightParen() extends PLToken
-  case class And() extends PLToken
-  case class Or() extends PLToken
-  case class Implies() extends PLToken
-  case class Not() extends PLToken
-  case class Contradiction() extends PLToken
-  case class Tautology() extends PLToken
-  case class Atom(c: Char) extends PLToken
 }
