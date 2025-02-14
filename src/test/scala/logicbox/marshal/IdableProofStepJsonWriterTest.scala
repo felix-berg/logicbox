@@ -7,7 +7,7 @@ import org.scalatest.Inspectors
 
 import logicbox.framework.IdableProof.Step
 
-class IdableProofStepJsonFormatTest extends AnyFunSpec {
+class IdableProofStepJsonWriterTest extends AnyFunSpec {
   import logicbox.framework._
   import spray.json._
 
@@ -40,7 +40,7 @@ class IdableProofStepJsonFormatTest extends AnyFunSpec {
 
   val stubProofWriter = StubProofWriter()
   val format: JsonWriter[IdableProof.Step[StubFormula, StubRule]] = 
-    IdableProofStepJsonWriter(ruleToName, formulaToASCII, formulaToLaTeX, stubProofWriter)
+    IdableProofStepJsonWriter(ruleToName, formulaToASCII, formulaToLaTeX, () => stubProofWriter)
 
   describe("IdableProofStepJsonFormat::write") {
     it("should marshal line with no refs correctly, LaTeX should be escaped") {

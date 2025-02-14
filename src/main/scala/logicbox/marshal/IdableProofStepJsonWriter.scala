@@ -7,7 +7,7 @@ case class IdableProofStepJsonWriter[F, R](
   ruleToName: R => String,
   formulaToASCII: F => String,
   formulaToLaTeX: F => String,
-  proofFormat: JsonWriter[IdableProof[F, R]]
+  getProofWriter: () => JsonWriter[IdableProof[F, R]]
 ) extends JsonWriter[IdableProof.Step[F, R]] 
 {
   private def writeRefs(refs: List[IdableProof.Step[F, R]]): JsValue = 
@@ -28,7 +28,7 @@ case class IdableProofStepJsonWriter[F, R](
     case box: IdableProof.Box[F, R, _] @unchecked => JsObject(
       "stepType" -> JsString("box"),
       "uuid" -> JsString(box.id),
-      "proof" -> proofFormat.write(box.proof)
+      "proof" -> getProofWriter().write(box.proof)
     )
     
     case _ => throw NotImplementedError("unreachable case")

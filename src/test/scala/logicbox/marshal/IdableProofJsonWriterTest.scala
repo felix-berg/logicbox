@@ -28,7 +28,7 @@ class IdableProofJsonWriterTest extends AnyFunSpec {
   }
 
   val stubStepFormat = StubProofStepFormat()
-  val format: JsonWriter[IdableProof[StubFormula, StubRule]] = IdableProofJsonFormat(stubStepFormat)
+  val format: JsonWriter[IdableProof[StubFormula, StubRule]] = IdableProofJsonWriter(stubStepFormat)
 
   describe("IdableProofJsonWriter::write") {
     it("should marshall empty proof") {
