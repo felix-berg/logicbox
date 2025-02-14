@@ -19,7 +19,7 @@ class IdableProofStepJsonFormatTest extends AnyFunSpec {
   private def formulaToLaTeX(f: StubFormula) = f.asLaTeX
 
   case class StubProofWriter(var writeResult: JsValue = JsNull) extends JsonWriter[IdableProof[StubFormula, StubRule]] {
-    override def write(obj: IdableProof[StubFormula, StubRule]): JsValue = { println(writeResult); writeResult }
+    override def write(obj: IdableProof[StubFormula, StubRule]): JsValue = writeResult
   }
 
   private def stubLine(id: String, f: StubFormula, r: StubRule, refids: List[String]): IdableProof.Line[StubFormula, StubRule] =
