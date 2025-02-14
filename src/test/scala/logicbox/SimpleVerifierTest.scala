@@ -36,8 +36,8 @@ class SimpleVerifierTest extends AnyFunSpec {
 
       val l3 = line("p and r", Assumption(), Nil)
       val l4 = line("p", AndElim(Side.Left), List(l3))
-      val l5 = line("r", AndElim(Side.Right), List(l3)) // implication gives t not r
-      val l6 = line("q", ImplicationElim(), List(l4, l1))
+      val l5 = line("r", AndElim(Side.Right), List(l3)) 
+      val l6 = line("q", ImplicationElim(), List(l4, l1)) // implication gives t not q
       val l7 = line("s", ImplicationElim(), List(l5, l2))
       val l8 = line("q and r", AndIntro(), List(l6, l7))
 
@@ -46,6 +46,12 @@ class SimpleVerifierTest extends AnyFunSpec {
 
       val proof = List(l1, l2, box, l9)
       val results = verifier.verify(proof)
+
+      results.collect {
+        case VerifierResult(line: ProofLineWithId[_, _], viol) => 
+          println(s"${line.id}: $viol")
+      }
+
       Inspectors.forAtLeast(1, results) {
         _ should matchPattern {
           case VerifierResult(line: ProofLineWithId[_, _], violation) =>
