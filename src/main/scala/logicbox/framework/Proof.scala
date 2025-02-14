@@ -1,6 +1,5 @@
 package logicbox.framework
 
-
 object Proof {
   sealed trait Step[+F, +R]
   case class Line[+F, +R](formula: F, rule: R, refs: List[Step[F, R]]) extends Step[F, R]

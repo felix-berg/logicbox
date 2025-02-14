@@ -1,13 +1,8 @@
 package logicbox
 
-import logicbox.framework.{Proof, RuleChecker}
+import logicbox.framework.{Proof, RuleChecker, VerifierResult, Verifier}
 import Proof.{Step, Line, Box}
 import logicbox.pl.*
-
-case class VerifierResult[F, R, V](where: Step[F, R], violation: V)
-trait Verifier[F, R, V] {
-  def verify(proof: Proof[F, R]): List[VerifierResult[F, R, V]]
-}
 
 case class SimpleVerifier[F, R, V, C <: RuleChecker[F, R, V]](checker: C) extends Verifier[F, R, V] {
   def verify(proof: Proof[F, R]): List[VerifierResult[F, R, V]] =
