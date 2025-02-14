@@ -9,19 +9,10 @@ import scala.collection.immutable.HashSet
 
 class ProofLineWithIdTest extends AnyFunSpec {
   case class StubFormula(i: Int)
-
-  sealed trait StubRuleSet extends Rule[StubFormula] {
-    case class Violation(expl: String = "THIS IS A STUB") extends ViolationTrait
-    type RuleSet = StubRuleSet
-  }
-
-  case class StubRule(violations: List[String] = Nil) extends StubRuleSet {
-    override def check(formula: StubFormula, refs: List[ProofStep[StubFormula, RuleSet]]): List[Violation] = 
-      violations.map { s => Violation(expl = s) }
-  }
+  case class StubRule()
 
   describe("ProofLineWithId") {
-    type L = ProofLine[StubFormula, StubRuleSet]
+    type L = ProofLine[StubFormula, StubRule]
 
     val pl1: L = ProofLineWithId(StubFormula(1), StubRule(), Nil, "id1")
     val pl2: L = ProofLineWithId(StubFormula(1), StubRule(), Nil, "id1")

@@ -25,7 +25,7 @@ class PropLogicRulesTest extends AnyFunSpec {
   private def stub(formula: String): ProofLine[PLFormula, PropLogicRule] =
     ProofLine(
       formula = parse(formula),
-      rule = new PropLogicRule.NullRule {},
+      rule = null,
       refs = Nil
     )
 

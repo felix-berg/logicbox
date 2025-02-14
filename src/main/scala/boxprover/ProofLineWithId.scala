@@ -2,7 +2,7 @@ package boxprover
 
 import java.util.Objects
 
-class ProofLineWithId[F, R <: Rule[F]](
+class ProofLineWithId[F, R](
   override val formula: F, 
   override val rule: R, 
   override val refs: List[ProofStep[F, R]],
