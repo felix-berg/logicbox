@@ -1,7 +1,6 @@
-package logicbox
+package logicbox.proof
 
 import logicbox.framework.{Proof}
-import logicbox.pl.*
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.*
 import org.scalatest.matchers.should.Matchers.*
@@ -11,6 +10,7 @@ class PropLogicRulesTest extends AnyFunSpec {
   import PropLogicRule._
   import PropLogicViolation._
   import Proof.Step
+  import logicbox.formula._
 
   private val lexer = PLLexer()
   private val parser = PLParser()

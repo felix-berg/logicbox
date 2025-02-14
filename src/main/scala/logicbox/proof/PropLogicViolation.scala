@@ -1,4 +1,4 @@
-package logicbox.pl
+package logicbox.proof
 
 sealed trait PropLogicViolation
 

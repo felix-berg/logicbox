@@ -1,4 +1,4 @@
-package logicbox
+package logicbox.proof
 import logicbox.framework.{Proof, IdableProof}
 
 object IdableProofImpl {

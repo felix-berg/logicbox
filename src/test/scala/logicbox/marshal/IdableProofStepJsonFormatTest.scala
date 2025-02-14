@@ -5,7 +5,7 @@ import org.scalatest.matchers.should.*
 import org.scalatest.matchers.should.Matchers.*
 import org.scalatest.Inspectors
 
-import logicbox.{IdableProofImpl}
+import logicbox.framework.IdableProof.Step
 
 class IdableProofStepJsonFormatTest extends AnyFunSpec {
   import logicbox.framework._
@@ -22,13 +22,21 @@ class IdableProofStepJsonFormatTest extends AnyFunSpec {
     override def write(obj: IdableProof[StubFormula, StubRule]): JsValue = writeResult
   }
 
-  private def stubLine(id: String, f: StubFormula, r: StubRule, refids: List[String]): IdableProof.Line[StubFormula, StubRule] =
-    IdableProofImpl.Line(id, f, r, refids.map{ 
-      refid => IdableProofImpl.Line(refid, StubFormula(s"${refid}_formula", s"${refid}_latexFormula"), StubRule(s"${refid}_rule_name"), Nil) 
-    })
+  case class StubLine(_id: String, f: StubFormula, r: StubRule, refids: List[String])
+    extends IdableProof.Line[StubFormula, StubRule] 
+  {
+    override def id: String = _id
+    override def formula: StubFormula = f
+    override def rule: StubRule = r
+    override def refs: List[Step[StubFormula, StubRule]] = refids.map { refid => StubLine(refid, StubFormula(s"${refid}_formula", s"${refid}_latexFormula"), StubRule(s"${refid}_rule_name"), Nil) }
+  }
 
-  private def stubBox(id: String, proof: IdableProof[StubFormula, StubRule]): IdableProof.Box[StubFormula, StubRule, _] =
-    IdableProofImpl.Box(id, (), proof)
+  private def stubBox(_id: String, _proof: IdableProof[StubFormula, StubRule]): IdableProof.Box[StubFormula, StubRule, _] =
+    new IdableProof.Box[StubFormula, StubRule, Unit] {
+      override def proof: IdableProof[StubFormula, StubRule] = _proof
+      override def info: Unit = ()
+      override def id: String = _id
+     }
 
   val stubProofWriter = StubProofWriter()
   val format: JsonWriter[IdableProof.Step[StubFormula, StubRule]] = 
@@ -41,8 +49,7 @@ class IdableProofStepJsonFormatTest extends AnyFunSpec {
       val formulaLaTeX = "\\text{latex babiiee \"\"e} \\begin{||} %%&&"
       val ruleName = "(b)or(ing)_introduction"
 
-      val line: IdableProof.Step[StubFormula, StubRule] = 
-        IdableProofImpl.Line(id, StubFormula(formulaASCII, formulaLaTeX), StubRule(ruleName), Nil)
+      val line: IdableProof.Step[StubFormula, StubRule] = StubLine(id, StubFormula(formulaASCII, formulaLaTeX), StubRule(ruleName), Nil)
 
       format.write(line) shouldBe JsObject(
         "stepType" -> JsString("line"),
@@ -63,7 +70,7 @@ class IdableProofStepJsonFormatTest extends AnyFunSpec {
       val ruleName = "bland_elimination"
       val refs = List("jasldiv103hvi2ovh1, æææasdfljk1fæ21")
 
-      val line = stubLine(id, StubFormula(formulaASCII, formulaLaTeX), StubRule(ruleName), refs)
+      val line = StubLine(id, StubFormula(formulaASCII, formulaLaTeX), StubRule(ruleName), refs)
 
       format.write(line) shouldBe JsObject(
         "stepType" -> JsString("line"),
@@ -84,8 +91,8 @@ class IdableProofStepJsonFormatTest extends AnyFunSpec {
       val (l2id, l2ascii, l2latex, l2rule, l2refs) = ("i am line2", "l2ASCII", "l2latex", "l2rule", List("l2ref1", "l2ref2", "l2ref3"))
 
       val proof = List(
-        stubLine(l1id, StubFormula(l1ascii, l1latex), StubRule(l1rule), l1refs),
-        stubLine(l1id, StubFormula(l1ascii, l1latex), StubRule(l1rule), l1refs),
+        StubLine(l1id, StubFormula(l1ascii, l1latex), StubRule(l1rule), l1refs),
+        StubLine(l1id, StubFormula(l1ascii, l1latex), StubRule(l1rule), l1refs),
       )
 
       val preparedJson = JsArray(List(JsString("THIS IS A TEST")))
