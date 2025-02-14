@@ -9,6 +9,7 @@ import org.scalatest.Inspectors
 class SimpleVerifierTest extends AnyFunSpec {
   import logicbox.pl._
   import logicbox.framework._
+  import logicbox._
 
   describe("SimpleVerifier") {
     it("should show integration of rulecheck") {
@@ -26,8 +27,8 @@ class SimpleVerifierTest extends AnyFunSpec {
         }
       }
 
-      def line(str: String, rule: R, refs: List[Proof.Step[F, R]]): ProofLineWithId[F, R] =
-        ProofLineWithId(PLParser()(PLLexer()(str)), rule, refs, generateId())
+      def line(str: String, rule: R, refs: List[IdableProof.Step[F, R]]): IdableProof.Line[F, R] =
+        IdableProofImpl.Line(generateId(), PLParser()(PLLexer()(str)), rule, refs)
 
       val checker: RuleChecker[F, R, V] = DelegatingRuleChecker()
       val verifier = SimpleVerifier(checker)
@@ -41,22 +42,17 @@ class SimpleVerifierTest extends AnyFunSpec {
       val l7 = line("s", ImplicationElim(), List(l5, l2))
       val l8 = line("q and r", AndIntro(), List(l6, l7)) // wrong atom rhs
 
-      val box = StubBox(info = (), proof = List(l3, l4, l5, l6, l7, l8))
+      val box = IdableProofImpl.Box("the only box", info = (), proof = List(l3, l4, l5, l6, l7, l8))
       val l9 = line("p and r -> q and s", ImplicationIntro(), List(box)) // wrong rhs (not same as concl)
 
       val proof = List(l1, l2, box, l9)
       val results = verifier.verify(proof)
 
-      results.collect {
-        case VerifierResult(line: ProofLineWithId[_, _], viol) => 
-          println(s"${line.id}: $viol")
-      }
-
       Inspectors.forAll(results) {
         _ should matchPattern {
-          case VerifierResult(line: ProofLineWithId[_, _], violation) if line.id == "6" =>
-          case VerifierResult(line: ProofLineWithId[_, _], violation) if line.id == "8" =>
-          case VerifierResult(line: ProofLineWithId[_, _], violation) if line.id == "9" =>
+          case VerifierResult(line: IdableProof.Line[_, _], violation) if line.id == "6" =>
+          case VerifierResult(line: IdableProof.Line[_, _], violation) if line.id == "8" =>
+          case VerifierResult(line: IdableProof.Line[_, _], violation) if line.id == "9" =>
         }
       }
     }

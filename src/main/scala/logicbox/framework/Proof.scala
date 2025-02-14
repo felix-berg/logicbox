@@ -2,6 +2,7 @@ package logicbox.framework
 
 object Proof {
   sealed trait Step[+F, +R]
+
   trait Line[+F, +R] extends Step[F, R] {
     def formula: F
     def rule: R
