@@ -41,7 +41,7 @@ class SimpleVerifierTest extends AnyFunSpec {
       val l7 = line("s", ImplicationElim(), List(l5, l2))
       val l8 = line("q and r", AndIntro(), List(l6, l7))
 
-      val box = Proof.Box(info = (), proof = List(l3, l4, l5, l6, l7, l8))
+      val box = StubBox(info = (), proof = List(l3, l4, l5, l6, l7, l8))
       val l9 = line("p and r -> q and s", ImplicationIntro(), List(box))
 
       val proof = List(l1, l2, box, l9)

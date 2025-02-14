@@ -17,7 +17,7 @@ class PropLogicRulesTest extends AnyFunSpec {
   private def parse(str: String): PLFormula = parser(lexer(str))
 
   private def line(formula: String, rule: PropLogicRule, refs: List[Step[PLFormula, PropLogicRule]]): Proof.Line[PLFormula, PropLogicRule] = {
-    Proof.Line(
+    StubLine(
       formula = parse(formula),
       rule = rule,
       refs = refs
@@ -25,15 +25,15 @@ class PropLogicRulesTest extends AnyFunSpec {
   }
 
   private def stub(formula: String): Proof.Line[PLFormula, PropLogicRule] =
-    Proof.Line(
+    StubLine(
       formula = parse(formula),
       rule = null,
       refs = Nil
     )
 
-  private def boxStub(ass: String, concl: String): Proof.Box[PLFormula, PropLogicRule, _] = Proof.Box(
+  private def boxStub(ass: String, concl: String): Proof.Box[PLFormula, PropLogicRule, _] = StubBox(
     info = (), proof = List(
-      Proof.Line(parse(ass), Assumption(), Nil),
+      StubLine(parse(ass), Assumption(), Nil),
       stub(concl)
     )
   )
@@ -298,7 +298,7 @@ class PropLogicRulesTest extends AnyFunSpec {
   }
 
   describe("extractAssumptionConclusionTest (helper function)") {
-    val emptybox = Proof.Box(info = (), proof = (Nil: List[Step[PLFormula, PropLogicRule]]))
+    val emptybox = StubBox(info = (), proof = (Nil: List[Step[PLFormula, PropLogicRule]]))
     it("should reject empty box") {
       val box = emptybox
       PropLogicRule.extractAssumptionConclusion(box) should matchPattern {
@@ -306,15 +306,15 @@ class PropLogicRulesTest extends AnyFunSpec {
       }
     }
     it("should reject box where first line is not assumption") {
-      val assmp = Proof.Line(parse("p"), Premise(), Nil) // not assumption
+      val assmp = StubLine(parse("p"), Premise(), Nil) // not assumption
       val concl = stub("q")
-      val box = Proof.Box(info = (), proof = List(assmp, concl): List[Step[PLFormula, PropLogicRule]])
+      val box = StubBox(info = (), proof = List(assmp, concl): List[Step[PLFormula, PropLogicRule]])
       PropLogicRule.extractAssumptionConclusion(box) should matchPattern {
         case Right(List(MiscellaneousViolation(_))) => 
       }
     }
     it("should reject box where first line is a box") {
-      val box = Proof.Box(info = (), proof = List(
+      val box = StubBox(info = (), proof = List(
         emptybox,
         stub("q")
       ))
@@ -323,8 +323,8 @@ class PropLogicRulesTest extends AnyFunSpec {
       }
     }
     it("should reject box where last line is a box") {
-      val box = Proof.Box(info = (), proof = List(
-        Proof.Line(parse("p"), Assumption(), Nil),
+      val box = StubBox(info = (), proof = List(
+        StubLine(parse("p"), Assumption(), Nil),
         emptybox
       ))
       PropLogicRule.extractAssumptionConclusion(box) should matchPattern {
