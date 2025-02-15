@@ -117,12 +117,6 @@ class IntegrateProofMarshallingTest extends AnyFlatSpec {
     }
 
     // if you want to look: 
-    println(result.prettyPrint)
-
-    val verifier = SimpleVerifier(DelegatingRuleChecker[PLFormula, PropLogicRule, PropLogicViolation]())
-    verifier.verify(proof).collect {
-      case VerifierResult(where: IdableProof.Step[PLFormula, PropLogicRule], violation) => 
-        println(s"error at ${where.id}: $violation")
-    }
+    // println(result.prettyPrint)
   }
 }
