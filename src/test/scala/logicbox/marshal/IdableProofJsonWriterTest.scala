@@ -8,12 +8,14 @@ import org.scalatest.Inspectors
 import logicbox.framework.IdableProof
 import spray.json._
 import logicbox.framework.IdableProof.Step
+import logicbox.framework.Proof
+import logicbox.framework.Idable
 
 class IdableProofJsonWriterTest extends AnyFunSpec {
   case class StubFormula()
   case class StubRule()
 
-  def stubLine(_id: String): IdableProof.Line[StubFormula, StubRule] = new IdableProof.Line[StubFormula, StubRule] {
+  case class StubLine(_id: String) extends Proof.Line[StubFormula, StubRule] with Idable {
     override def id = _id
     override def formula = StubFormula()
     override def rule = StubRule()
@@ -36,7 +38,7 @@ class IdableProofJsonWriterTest extends AnyFunSpec {
     }
 
     it("should marshall non-empty proof") {
-      format.write((1 to 5).map(i => stubLine(i.toString)).toList) shouldBe JsArray(
+      format.write((1 to 5).map(i => StubLine(i.toString)).toList) shouldBe JsArray(
         JsString("1"), 
         JsString("2"), 
         JsString("3"), 

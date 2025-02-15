@@ -23,7 +23,7 @@ class IdableProofStepJsonWriterTest extends AnyFunSpec {
   }
 
   case class StubLine(_id: String, f: StubFormula, r: StubRule, refids: List[String])
-    extends IdableProof.Line[StubFormula, StubRule] 
+    extends Proof.Line[StubFormula, StubRule] with Idable
   {
     override def id: String = _id
     override def formula: StubFormula = f
@@ -32,7 +32,7 @@ class IdableProofStepJsonWriterTest extends AnyFunSpec {
   }
 
   private def stubBox(_id: String, _proof: IdableProof[StubFormula, StubRule]): IdableProof.Box[StubFormula, StubRule, _] =
-    new IdableProof.Box[StubFormula, StubRule, Unit] {
+    new Proof.Box[StubFormula, StubRule, Unit] with Idable {
       override def proof: IdableProof[StubFormula, StubRule] = _proof
       override def info: Unit = ()
       override def id: String = _id

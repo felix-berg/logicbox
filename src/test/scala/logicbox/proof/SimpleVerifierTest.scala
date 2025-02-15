@@ -49,9 +49,9 @@ class SimpleVerifierTest extends AnyFunSpec {
 
       Inspectors.forAll(results) {
         _ should matchPattern {
-          case VerifierResult(line: IdableProof.Line[_, _], violation) if line.id == "6" =>
-          case VerifierResult(line: IdableProof.Line[_, _], violation) if line.id == "8" =>
-          case VerifierResult(line: IdableProof.Line[_, _], violation) if line.id == "9" =>
+          case VerifierResult(line: Idable, violation) if line.id == "6" =>
+          case VerifierResult(line: Idable, violation) if line.id == "8" =>
+          case VerifierResult(line: Idable, violation) if line.id == "9" =>
         }
       }
     }

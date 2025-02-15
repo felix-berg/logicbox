@@ -6,15 +6,11 @@ trait Idable {
 
 object IdableProof {
   type Step[+F, +R] = Proof.Step[F, R] & Idable
-
-  trait Line[+F, +R] extends Proof.Line[F, R] with Idable {
-    // references must also be id'able
-    override def refs: List[Step[F, R]]
+  type Line[+F, +R] = Proof.Line[F, R] & Idable {
+    def refs: List[Step[F, R]]
   }
-
-  trait Box[+F, +R, +I] extends Proof.Box[F, R, I] with Idable {
-    // subproof must also be id'able
-    override def proof: IdableProof[F, R]
+  type Box[+F, +R, +I] = Proof.Box[F, R, I] & Idable {
+    def proof: IdableProof[F, R]
   }
 }
 
