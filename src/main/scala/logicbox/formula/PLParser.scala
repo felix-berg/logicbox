@@ -1,9 +1,9 @@
-package logicbox.pl
+package logicbox.formula
 
 import scala.util.parsing.combinator.PackratParsers
 
 class PLParser extends PackratParsers {
-  import PLFormula.*
+  import PLFormula._
 
   override type Elem = PLToken
 

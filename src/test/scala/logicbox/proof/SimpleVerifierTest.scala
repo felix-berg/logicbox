@@ -1,15 +1,14 @@
 package logicbox
 
-
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.*
 import org.scalatest.matchers.should.Matchers.*
 import org.scalatest.Inspectors
 
 class SimpleVerifierTest extends AnyFunSpec {
-  import logicbox.pl._
   import logicbox.framework._
-  import logicbox._
+  import logicbox.formula._
+  import logicbox.proof._
 
   describe("SimpleVerifier") {
     it("should show integration of rulecheck") {

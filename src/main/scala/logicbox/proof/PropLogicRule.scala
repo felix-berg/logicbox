@@ -1,6 +1,7 @@
-package logicbox.pl
+package logicbox.proof
 
 import logicbox.framework.{ Proof, CheckableRule }
+import logicbox.formula.PLFormula
 
 sealed trait PropLogicRule extends CheckableRule[PLFormula, PropLogicRule, PropLogicViolation]
 

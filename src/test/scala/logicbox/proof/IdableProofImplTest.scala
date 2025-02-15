@@ -1,7 +1,6 @@
-package logicbox
+package logicbox.proof
 
-import framework.{Proof}
-import logicbox.{IdableProofImpl}
+import logicbox.framework.{Proof}
 
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.*

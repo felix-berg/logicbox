@@ -1,4 +1,4 @@
-package logicbox.pl
+package logicbox.formula
 
 sealed abstract class PLFormula {
   import PLFormula.*
