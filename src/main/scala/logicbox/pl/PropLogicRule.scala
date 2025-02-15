@@ -24,39 +24,39 @@ object PropLogicRule {
       ) else Nil
     }
 
-    def extract(refs: List[Step], pattern: Seq[BoxOrLine]): Either[List[Step], List[Viol]] = {
+    def extract(refs: List[Step], pattern: Seq[BoxOrLine]): Either[List[Viol], List[Step]] = {
       val zp = refs.zipWithIndex.zip(pattern).map { case ((ref, idx), pattern) => (idx, pattern, ref)}
 
       val result = zp.map {
         // matches
-        case (_, BoxOrLine.Line, line: Proof.Line[_, _]) => Left(line) 
-        case (_, BoxOrLine.Box, box: Proof.Box[_, _, _]) => Left(box)
+        case (_, BoxOrLine.Line, line: Proof.Line[_, _]) => Right(line) 
+        case (_, BoxOrLine.Box, box: Proof.Box[_, _, _]) => Right(box)
 
         // violations
-        case (idx, BoxOrLine.Box, line: Proof.Line[_, _]) => Right(ReferenceShouldBeBox(idx))
-        case (idx, BoxOrLine.Line, box: Proof.Box[_, _, _]) => Right(ReferenceShouldBeLine(idx))
+        case (idx, BoxOrLine.Box, line: Proof.Line[_, _]) => Left(ReferenceShouldBeBox(idx))
+        case (idx, BoxOrLine.Line, box: Proof.Box[_, _, _]) => Left(ReferenceShouldBeLine(idx))
       }
 
       val good = result.forall {
-        case Left(_) => true
-        case Right(_) => false
+        case Right(_) => true
+        case Left(_) => false
       }
 
       if (good) {
         // collect steps 
-        Left(result.collect { case Left(step) => (step: Step) }) 
+        Right(result.collect { case Right(step) => (step: Step) }) 
       } else {
         // collect violations
-        Right(result.collect { case Right(mm) => mm })
+        Left(result.collect { case Left(mm) => mm })
       }
     }
 
     checkLengthMatches(refs, pattern) ++ { 
       extract(refs, pattern) match {
-        case Left(ls: List[Step]) =>
+        case Right(ls: List[Step]) =>
           assert(func.isDefinedAt(ls), s"Partial function is defined on given pattern $pattern")
           func.apply(ls)
-        case Right(mismatches) => mismatches
+        case Left(mismatches) => mismatches
       }
     }
   }
