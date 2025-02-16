@@ -1,5 +1,5 @@
 package logicbox.framework
 
-trait CheckableRule[F, Self <: CheckableRule[F, Self, V], V] {
-  def check(formula: F, refs: List[Proof.Step[F, Self]]): List[V]
+trait CheckableRule[F, I, V] {
+  def check(formula: F, refs: List[Reference[F, I]]): List[V]
 }
