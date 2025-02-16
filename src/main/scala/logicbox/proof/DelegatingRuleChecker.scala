@@ -3,7 +3,9 @@ package logicbox
 import logicbox.framework.{CheckableRule, RuleChecker, Reference}
 
 // rule checker that simply delegates to each rules' own `check` method (given that R is checkable)
-class DelegatingRuleChecker[F, R <: CheckableRule[F, I, V], I, V] extends RuleChecker[F, R, I, V] {
-  override def check(rule: R, formula: F, refs: List[Reference[F, I]]): List[V] = 
+class DelegatingRuleChecker[Formula, Rule <: CheckableRule[Formula, BoxInfo, Viol], BoxInfo, Viol]
+  extends RuleChecker[Formula, Rule, BoxInfo, Viol]
+{
+  override def check(rule: Rule, formula: Formula, refs: List[Reference[Formula, BoxInfo]]): List[Viol] =
     rule.check(formula, refs)
 }

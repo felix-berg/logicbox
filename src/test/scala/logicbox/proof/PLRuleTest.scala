@@ -6,9 +6,9 @@ import org.scalatest.matchers.should.*
 import org.scalatest.matchers.should.Matchers.*
 import org.scalatest.Inspectors
 
-class PropLogicRulesTest extends AnyFunSpec {
-  import PropLogicRule._
-  import PropLogicViolation._
+class PLRuleTest extends AnyFunSpec {
+  import PLRule._
+  import PLViolation._
   import logicbox.formula._
 
   private val lexer = PLLexer()
@@ -16,21 +16,21 @@ class PropLogicRulesTest extends AnyFunSpec {
   private def parse(str: String): PLFormula = parser(lexer(str))
 
   // fake things so tests still work (a little hacky, i admit)
-  private case class Line(formula: PLFormula, rule: PropLogicRule, refs: List[Reference[PLFormula, PropLogicBoxInfo]]) 
-    extends Reference.Formula[PLFormula]
-  private case class Box(fst: PLFormula, lst: PLFormula) extends Reference.Box[PLFormula, PropLogicBoxInfo] {
+  private case class Line(formula: PLFormula, rule: PLRule, refs: List[Reference[PLFormula, PLBoxInfo]])
+    extends Reference.Line[PLFormula]
+  private case class Box(fst: PLFormula, lst: PLFormula) extends Reference.Box[PLFormula, PLBoxInfo] {
     override def info = ()
     override def lines = List(fst, lst)
   }
 
-  private def stub(str: String): Reference[PLFormula, PropLogicBoxInfo] = new Reference.Formula[PLFormula] {
+  private def stub(str: String): Reference[PLFormula, PLBoxInfo] = new Reference.Line[PLFormula] {
     def formula = parse(str)
   }
 
-  private def boxStub(ass: String, concl: String): Reference.Box[PLFormula, PropLogicBoxInfo] =
+  private def boxStub(ass: String, concl: String): Reference.Box[PLFormula, PLBoxInfo] =
     Box(parse(ass), parse(concl))
 
-  private def line(fml: String, rl: PropLogicRule, refs: List[Reference[PLFormula, PropLogicBoxInfo]]): Line = 
+  private def line(fml: String, rl: PLRule, refs: List[Reference[PLFormula, PLBoxInfo]]): Line =
     Line(parse(fml), rl, refs)
 
   describe("AndElim") {

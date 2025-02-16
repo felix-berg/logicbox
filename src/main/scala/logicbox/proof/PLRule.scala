@@ -3,18 +3,18 @@ package logicbox.proof
 import logicbox.framework.{ CheckableRule, RuleChecker, Reference }
 import logicbox.formula.PLFormula
 
-type PropLogicBoxInfo = Unit
+type PLBoxInfo = Unit
 
-sealed trait PropLogicRule extends CheckableRule[PLFormula, PropLogicBoxInfo, PropLogicViolation]
+sealed trait PLRule extends CheckableRule[PLFormula, PLBoxInfo, PLViolation]
 
-object PropLogicRule {
+object PLRule {
   import PLFormula.*
-  import PropLogicViolation._
+  import PLViolation._
 
   enum Side { case Left; case Right }
   import Reference._
-  private type Ref = Reference[PLFormula, PropLogicBoxInfo]
-  private type Viol = PropLogicViolation
+  private type Ref = Reference[PLFormula, PLBoxInfo]
+  private type Viol = PLViolation
 
   private enum BoxOrFormula { case Box; case Formula }
   private def extractAndThen(refs: List[Ref], pattern: Seq[BoxOrFormula]) 
@@ -31,8 +31,8 @@ object PropLogicRule {
 
       val result = zp.map {
         // matches
-        case (_, BoxOrFormula.Formula, f: Formula[PLFormula]) => Right(f)
-        case (_, BoxOrFormula.Box, b: Box[PLFormula, PropLogicBoxInfo]) => Right(b)
+        case (_, BoxOrFormula.Formula, f: Line[PLFormula]) => Right(f)
+        case (_, BoxOrFormula.Box, b: Box[PLFormula, PLBoxInfo]) => Right(b)
 
         // violations
         case (idx, BoxOrFormula.Box, _) => Left(ReferenceShouldBeBox(idx))
@@ -69,19 +69,19 @@ object PropLogicRule {
     (func: PartialFunction[List[PLFormula], List[Viol]]): List[Viol] = 
   {
     extractAndThen(refs, (1 to n).map { _ => BoxOrFormula.Formula }) {
-      case lines: List[Reference.Formula[PLFormula]] @unchecked => 
+      case lines: List[Reference.Line[PLFormula]] @unchecked =>
         func.apply(lines.map(_.formula))
     }
   }
 
-  abstract class NullRule extends PropLogicRule {
+  abstract class NullRule extends PLRule {
     def check(formula: PLFormula, refs: List[Ref]): List[Viol] = Nil
   }
 
   case class Premise() extends NullRule 
   case class Assumption() extends NullRule 
 
-  case class AndElim(side: Side) extends PropLogicRule {
+  case class AndElim(side: Side) extends PLRule {
     private def checkImpl(formula: PLFormula, ref: PLFormula): List[Viol] = ref match {
       case And(lhs, rhs) => side match {
         case Side.Left => 
@@ -107,7 +107,7 @@ object PropLogicRule {
     }
   }
 
-  case class AndIntro() extends PropLogicRule {
+  case class AndIntro() extends PLRule {
     private def checkImpl(formula: PLFormula, r0: PLFormula, r1: PLFormula): List[Viol] = 
       formula match {
         case And(phi, psi) => List(
@@ -130,7 +130,7 @@ object PropLogicRule {
     }
   }
 
-  case class OrIntro(side: Side) extends PropLogicRule {
+  case class OrIntro(side: Side) extends PLRule {
     private def checkImpl(formula: PLFormula, ref: PLFormula): List[Viol] = (side, formula) match {
       case (Side.Left, Or(lhs, _)) => 
         if (lhs != ref) List(
@@ -152,7 +152,7 @@ object PropLogicRule {
     }
   }
 
-  case class OrElim() extends PropLogicRule {
+  case class OrElim() extends PLRule {
     private def checkImpl(
       formula: PLFormula, r0: PLFormula, 
       r1: (PLFormula, PLFormula), r2: (PLFormula, PLFormula)
@@ -198,7 +198,7 @@ object PropLogicRule {
 
       extractAndThen(refs, pattern)  {
         case List(
-          Reference.Formula[PLFormula](r0),
+          Reference.Line[PLFormula](r0),
           b1: Reference.Box[PLFormula, _] @unchecked,
           b2: Reference.Box[PLFormula, _] @unchecked
         ) =>
@@ -230,7 +230,7 @@ object PropLogicRule {
     }
   }
 
-  case class ImplicationIntro() extends PropLogicRule {
+  case class ImplicationIntro() extends PLRule {
     private def checkMatchesBox(formula: PLFormula, asmp: PLFormula, concl: PLFormula): List[Viol] = {
       formula match {
         case Implies(phi, psi) =>
@@ -258,7 +258,7 @@ object PropLogicRule {
     }
   }
 
-  case class ImplicationElim() extends PropLogicRule {
+  case class ImplicationElim() extends PLRule {
     private def checkMatchesRef(formula: PLFormula, r0: PLFormula, r1: PLFormula): List[Viol] = 
       r1 match {
         case Implies(from, to) => 
@@ -282,7 +282,7 @@ object PropLogicRule {
     }
   }
 
-  case class NotIntro() extends PropLogicRule {
+  case class NotIntro() extends PLRule {
     private def checkImpl(formula: PLFormula, asmp: PLFormula, concl: PLFormula): List[Viol] = {
       {
         if (concl != Contradiction()) List(
@@ -310,7 +310,7 @@ object PropLogicRule {
     }
   }
 
-  case class NotElim() extends PropLogicRule {
+  case class NotElim() extends PLRule {
     private def checkImpl(formula: PLFormula, r0: PLFormula, r1: PLFormula): List[Viol] = {
       {
         if (formula != Contradiction()) List(
@@ -333,7 +333,7 @@ object PropLogicRule {
       }
   }
 
-  case class ContradictionElim() extends PropLogicRule {
+  case class ContradictionElim() extends PLRule {
     override def check(formula: PLFormula, refs: List[Ref]): List[Viol] = {
       extractNFormulasAndThen(refs, 1) {
         case List(r0) =>
@@ -344,7 +344,7 @@ object PropLogicRule {
     }
   }
 
-  case class NotNotElim() extends PropLogicRule {
+  case class NotNotElim() extends PLRule {
     override def check(formula: PLFormula, refs: List[Ref]): List[Viol] = {
       extractNFormulasAndThen(refs, 1) {
         case List(Not(Not(phi))) => 
@@ -358,7 +358,7 @@ object PropLogicRule {
     }
   }
 
-  case class ModusTollens() extends PropLogicRule {
+  case class ModusTollens() extends PLRule {
     private def checkImpl(formula: PLFormula, r0: PLFormula, r1: PLFormula): List[Viol] = {
       {
         formula match {
@@ -398,7 +398,7 @@ object PropLogicRule {
     }
   }
 
-  case class NotNotIntro() extends PropLogicRule {
+  case class NotNotIntro() extends PLRule {
     private def checkImpl(formula: PLFormula, ref: PLFormula): List[Viol] = {
       formula match {
         case Not(Not(phi)) => 
@@ -418,7 +418,7 @@ object PropLogicRule {
     }
   }
 
-  case class ProofByContradiction() extends PropLogicRule {
+  case class ProofByContradiction() extends PLRule {
     private def checkImpl(formula: PLFormula, asmp: PLFormula, concl: PLFormula): List[Viol] = {
       { asmp match {
         case Not(phi) => 
@@ -443,7 +443,7 @@ object PropLogicRule {
     }
   }
 
-  case class LawOfExcludedMiddle() extends PropLogicRule {
+  case class LawOfExcludedMiddle() extends PLRule {
     override def check(formula: PLFormula, refs: List[Ref]): List[Viol] = {
       extractNFormulasAndThen(refs, 0) {
         case Nil =>
@@ -455,7 +455,7 @@ object PropLogicRule {
     }
   }
 
-  case class Copy() extends PropLogicRule {
+  case class Copy() extends PLRule {
     override def check(formula: PLFormula, refs: List[Ref]): List[Viol] = {
       extractNFormulasAndThen(refs, 1) {
         case List(ref) => 
