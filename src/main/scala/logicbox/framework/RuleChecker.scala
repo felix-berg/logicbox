@@ -1,5 +1,6 @@
 package logicbox.framework
 
-trait RuleChecker[Formula, Rule, BoxInfo, Viol] {
-  def check(rule: Rule, formula: Formula, refs: List[Reference[Formula, BoxInfo]]): List[Viol]
+trait RuleChecker[F, R, B, Viol] {
+  type Violation = Viol
+  def check(rule: R, formula: F, refs: List[Reference[F, B]]): List[Viol]
 }

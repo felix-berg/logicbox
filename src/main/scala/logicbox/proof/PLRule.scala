@@ -20,7 +20,7 @@ object PLRule {
   private def extractAndThen(refs: List[Ref], pattern: Seq[BoxOrFormula]) 
     (func: PartialFunction[List[Ref], List[Viol]]): List[Viol] = 
   {
-    def checkLengthMatches(refs: Seq[_], pattern: Seq[_]): List[Viol] = {
+    def checkLengthMatches(refs: Seq[?], pattern: Seq[?]): List[Viol] = {
       if (refs.length != pattern.length) List(
         WrongNumberOfReferences(pattern.length, refs.length)
       ) else Nil
