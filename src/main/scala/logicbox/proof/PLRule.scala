@@ -202,36 +202,13 @@ object PLRule {
           b1: Reference.Box[PLFormula, _] @unchecked,
           b2: Reference.Box[PLFormula, _] @unchecked
         ) =>
-          List(b1, b2).map(extractAssumptionConclusion) match {
-            case List(Right(p1), Right(p2)) => 
-              checkImpl(formula, r0, p1, p2)
-
-            case List(Left(vs1), Left(vs2)) => vs1 ++ vs2
-            case List(_, Left(vs)) => vs
-            case List(Left(vs), _) => vs
-
-            case _ => Nil
-          }
+          checkImpl(formula, r0, (b1.assumption, b1.conclusion), (b2.assumption, b2.conclusion))
       }
     }
   }
 
-  // get first and last elements (same if list has one elemnt)
-  private def firstAndLast[T](seq: Seq[T]): Option[(T, T)] =
-    if (seq.isEmpty) None
-    else Some(seq.head, seq.last)
-
-  def extractAssumptionConclusion(box: Reference.Box[PLFormula, _]): Either[List[Viol], (PLFormula, PLFormula)] = {
-    firstAndLast(box.lines) match {
-      case Some(assmp: PLFormula, concl: PLFormula) => Right((assmp, concl))
-      case _ => Left(List(
-        MiscellaneousViolation("box is empty")
-      ))
-    }
-  }
-
   case class ImplicationIntro() extends PLRule {
-    private def checkMatchesBox(formula: PLFormula, asmp: PLFormula, concl: PLFormula): List[Viol] = {
+    private def checkImpl(formula: PLFormula, asmp: PLFormula, concl: PLFormula): List[Viol] = {
       formula match {
         case Implies(phi, psi) =>
           (if (phi != asmp) List(
@@ -249,11 +226,7 @@ object PLRule {
 
     def check(formula: PLFormula, refs: List[Ref]): List[Viol] = {
       extractAndThen(refs, List(BoxOrFormula.Box)) {
-        case List(box: Reference.Box[PLFormula, _]) => 
-          extractAssumptionConclusion(box) match {
-            case Left(mms) => mms
-            case Right(asmp, concl) => checkMatchesBox(formula, asmp, concl)
-          }
+        case List(box: Reference.Box[PLFormula, _]) => checkImpl(formula, box.assumption, box.conclusion)
       }
     }
   }
@@ -301,11 +274,7 @@ object PLRule {
       
     override def check(formula: PLFormula, refs: List[Ref]): List[Viol] = {
       extractAndThen(refs, List(BoxOrFormula.Box)) {
-        case List(box: Reference.Box[PLFormula, _] @unchecked) => 
-          extractAssumptionConclusion(box) match {
-            case Right(asmp, concl) => checkImpl(formula, asmp, concl)
-            case Left(mms) => mms
-          }
+        case List(Box[PLFormula, PLBoxInfo](_, asmp, concl)) => checkImpl(formula, asmp, concl)
       }
     }
   }
@@ -435,10 +404,7 @@ object PLRule {
     override def check(formula: PLFormula, refs: List[Ref]): List[Viol] = {
       extractAndThen(refs, List(BoxOrFormula.Box)) {
         case List(box: Reference.Box[PLFormula, _] @unchecked) => 
-          extractAssumptionConclusion(box) match {
-            case Right(asmp, concl) => checkImpl(formula, asmp, concl)
-            case Left(mms) => mms
-          }
+          checkImpl(formula, box.assumption, box.conclusion)
       }
     }
   }

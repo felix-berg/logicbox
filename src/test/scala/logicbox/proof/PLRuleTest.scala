@@ -20,7 +20,8 @@ class PLRuleTest extends AnyFunSpec {
     extends Reference.Line[PLFormula]
   private case class Box(fst: PLFormula, lst: PLFormula) extends Reference.Box[PLFormula, PLBoxInfo] {
     override def info = ()
-    override def lines = List(fst, lst)
+    override def assumption = fst
+    override def conclusion = lst
   }
 
   private def stub(str: String): Reference[PLFormula, PLBoxInfo] = new Reference.Line[PLFormula] {

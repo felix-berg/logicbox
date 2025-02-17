@@ -9,7 +9,8 @@ object Reference {
 
   trait Box[+Formula, +BoxInfo] extends Reference[Formula, BoxInfo] {
     def info: BoxInfo
-    def lines: Seq[Formula]
+    def assumption: Formula
+    def conclusion: Formula
   }
 
   object Line {
@@ -18,7 +19,7 @@ object Reference {
   }
 
   object Box {
-    def unapply[F, I](b: Box[F, I]): Option[(I, Seq[F])] =
-      Some(b.info, b.lines)
+    def unapply[F, I](b: Box[F, I]): Option[(I, F, F)] =
+      Some(b.info, b.assumption, b.conclusion)
   }
 }
