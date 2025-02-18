@@ -12,7 +12,7 @@ class ScopedProofCheckerTest extends AnyFunSpec {
   import ProofStubs._
 
   describe("ScopedProofCheckerTest::check") {
-    val checker = ScopedProofChecker[F, R, B, V, Id]()
+    val checker = ScopedProofChecker[F, R, B, Id]()
     it("should allow empty proof") {
       val proof = StubProof()
       checker.check(proof) should be (Nil)

@@ -2,12 +2,23 @@ package logicbox.proof
 
 import logicbox.framework.{RuleChecker, Proof, ProofChecker, Reference}
 
+object ProofCheckerImpl {
+  sealed trait Diagnostic[+Id, +V] {
+    def stepId: Id
+  }
+
+  case class RuleViolation[Id, V](stepId: Id, violation: V) extends Diagnostic[Id, V]
+  case class StepIdNotFound[Id](stepId: Id, expl: String) extends Diagnostic[Id, Nothing]
+  case class ReferenceIdNotFound[Id](stepId: Id, whichRef: Int, refId: Id, expl: String) extends Diagnostic[Id, Nothing]
+  case class MalformedReference[Id](stepId: Id, whichRef: Int, refId: Id, expl: String) extends Diagnostic[Id, Nothing]
+}
+
 class ProofCheckerImpl[F, R, B, V, Id](
   val ruleChecker: RuleChecker[F, R, B, V]
-) extends ProofChecker[F, R, B, V, Id] {
+) extends ProofChecker[F, R, B, Id, ProofCheckerImpl.Diagnostic[Id, V]] {
 
   import Proof._
-  import ProofChecker._
+  import ProofCheckerImpl._
 
   type Pf = Proof[F, R, B, Id]
   private def resolveBoxReference(proof: Pf, stepId: Id, refIdx: Int, boxId: Id, box: Proof.Box[B, Id]): Either[List[Diagnostic], Reference.Box[F, B]] =
@@ -21,9 +32,9 @@ class ProofCheckerImpl[F, R, B, V, Id](
       (ass, concl) <- (names, ids, ids.map(proof.getStep)).zipped.toList.collect {
         case (which, refId, Left(StepNotFound(_, expl))) => 
           Left(MalformedReference(stepId, refIdx, boxId, s"$which in box has invalid id (id: $refId)"))
-        case (which, refId, Right(Proof.Box(_, _))) => 
+        case (which, refId, Right(Box(_, _))) => 
           Left(MalformedReference(stepId, refIdx, boxId, s"$which in box is itself a box"))
-        case (_, _, Right(Proof.Line(formula: F @unchecked, _, _))) => Right(formula)
+        case (_, _, Right(Line(formula: F @unchecked, _, _))) => Right(formula)
       } match {
         case List(Right(ass), Right(concl)) => Right(ass, concl)
         case ls => 
