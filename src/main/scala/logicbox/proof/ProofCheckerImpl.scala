@@ -19,6 +19,8 @@ class ProofCheckerImpl[F, R, B, V, Id](
 
   import Proof._
   import ProofCheckerImpl._
+  
+  type Diagnostic = ProofCheckerImpl.Diagnostic[Id, V]
 
   type Pf = Proof[F, R, B, Id]
   private def resolveBoxReference(proof: Pf, stepId: Id, refIdx: Int, boxId: Id, box: Proof.Box[B, Id]): Either[List[Diagnostic], Reference.Box[F, B]] =
