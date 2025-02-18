@@ -9,56 +9,8 @@ import org.scalatest.funspec.AnyFunSpec
 import logicbox.framework.Proof.Step
 
 class ProofCheckerImplTest extends AnyFunSpec {
-  case class StubFormula(i: Int = 0)
+  import ProofStubs._
 
-  sealed trait StubRule
-  case class Good() extends StubRule
-  case class Bad() extends StubRule
-
-  case class StubBoxInfo(info: String = "")
-  case class StubViolation()
-
-  type F = StubFormula
-  type R = StubRule
-  type B = StubBoxInfo
-  type V = StubViolation
-  type Id = String
-
-  type RlCheck = RuleChecker[F, R, B, V]
-
-  case class StubLine(
-    override val formula: StubFormula = StubFormula(),
-    override val rule: StubRule = Good(),
-    override val refs: Seq[Id] = Seq(),
-  ) extends Proof.Line[StubFormula, StubRule, Id]
-
-  case class StubBox(
-    override val info: StubBoxInfo = StubBoxInfo(),
-    override val steps: Seq[Id] = Seq(),
-  ) extends Proof.Box[StubBoxInfo, Id]
-
-  case class StubProof(
-    override val roots: Seq[Id] = Seq(),
-    val steps: Map[Id, Proof.Step[F, R, B, Id]] = Map.empty
-  ) extends Proof[F, R, B, Id] {
-    override def getStep(id: Id): Either[Proof.StepNotFound[Id], Proof.Step[F, R, B, Id]] = 
-      steps.get(id) match {
-        case None => Left(Proof.StepNotFound(id, s"STUB THING $id"))
-        case Some(value) => Right(value)
-      }
-  }
-
-  case class StubRuleChecker() extends RlCheck {
-    var refsCalledWith: Option[List[Reference[StubFormula, StubBoxInfo]]] = None
-
-    override def check(rule: StubRule, formula: StubFormula, refs: List[Reference[StubFormula, StubBoxInfo]]): List[StubViolation] = 
-      refsCalledWith = Some(refs)
-      rule match {
-        case Good() => Nil
-        case Bad() => List(StubViolation())
-      }
-  }
-  
   def proofChecker(ruleChecker: StubRuleChecker = StubRuleChecker()): ProofChecker[F, R, B, V, Id] = 
     ProofCheckerImpl(ruleChecker)
 
@@ -113,8 +65,8 @@ class ProofCheckerImplTest extends AnyFunSpec {
       val checker = proofChecker(rc)
 
       val proof = StubProof(
-        roots = Seq("r0", "r1", "line"),
-        steps = Map(
+        steps = Seq("r0", "r1", "line"),
+        map = Map(
           "line" -> StubLine(refs = Seq("r0", "r1")),
           "r0" -> StubLine(formula = StubFormula(38)),
           "r1" -> StubBox(info = StubBoxInfo("some info"), steps = Seq("ass", "ccl")),
@@ -138,8 +90,8 @@ class ProofCheckerImplTest extends AnyFunSpec {
       val checker = proofChecker()
 
       val proof = StubProof(
-        roots = Seq("box"),
-        steps = Map(
+        steps = Seq("box"),
+        map = Map(
           "box" -> StubBox(info = StubBoxInfo("some info"), steps = Seq("ass", "ccl")),
           "ass" -> StubLine(formula = StubFormula(11), Bad()),
           "ccl" -> StubLine(formula = StubFormula(12), Good())
@@ -156,8 +108,8 @@ class ProofCheckerImplTest extends AnyFunSpec {
     it("should not allow box as ref when first line in box is box") {
       val checker = proofChecker()
       val proof = StubProof(
-        roots = Seq("box", "line"),
-        steps = Map(
+        steps = Seq("box", "line"),
+        map = Map(
           "line" -> StubLine(refs = Seq("box")),
           "box" -> StubBox(steps = Seq("assBox", "concl")),
           "assBox" -> StubBox(steps = Seq()),
@@ -174,8 +126,8 @@ class ProofCheckerImplTest extends AnyFunSpec {
     it("should not allow box with undefined reference (in concl)") {
       val checker = proofChecker()
       val proof = StubProof(
-        roots = Seq("box", "line"),
-        steps = Map(
+        steps = Seq("box", "line"),
+        map = Map(
           "line" -> StubLine(refs = Seq("box")),
           "box" -> StubBox(steps = Seq("ass", "concl")),
           "ass" -> StubLine(),
@@ -192,8 +144,8 @@ class ProofCheckerImplTest extends AnyFunSpec {
     it("should not allow box with undefined reference (in assumption)") {
       val checker = proofChecker()
       val proof = StubProof(
-        roots = Seq("box", "line"),
-        steps = Map(
+        steps = Seq("box", "line"),
+        map = Map(
           "line" -> StubLine(refs = Seq("box")),
           "box" -> StubBox(steps = Seq("ass", "concl")),
           "concl" -> StubLine(),
@@ -210,8 +162,8 @@ class ProofCheckerImplTest extends AnyFunSpec {
     it("should not have duplicate errors when box has one wrong line") {
       val checker = proofChecker()
       val proof = StubProof(
-        roots = Seq("box", "line"),
-        steps = Map(
+        steps = Seq("box", "line"),
+        map = Map(
           "line" -> StubLine(refs = Seq("box")),
           "box" -> StubBox(steps = Seq("ass")) // no ref
         )

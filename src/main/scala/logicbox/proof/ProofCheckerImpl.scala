@@ -2,22 +2,8 @@ package logicbox.proof
 
 import logicbox.framework.{RuleChecker, Proof, ProofChecker, Reference}
 
-case class ReferenceLineImpl[F](formula: F) extends Reference.Line[F]
-case class ReferenceBoxImpl[F, B](info: B, assumption: F, conclusion: F) 
-  extends Reference.Box[F, B]
-
-object Util {
-  def partitionEither[T, U](ls: List[Either[T, U]]): (List[T], List[U]) = 
-    ls.foldRight((List[T](), List[U]())) {
-      case (either, (ls, rs)) => either match {
-        case Left(value) => (value :: ls, rs)
-        case Right(value) => (ls, value :: rs)
-      }
-    }
-}
-
 class ProofCheckerImpl[F, R, B, V, Id](
-  override val ruleChecker: RuleChecker[F, R, B, V]
+  val ruleChecker: RuleChecker[F, R, B, V]
 ) extends ProofChecker[F, R, B, V, Id] {
 
   import Proof._
@@ -100,5 +86,5 @@ class ProofCheckerImpl[F, R, B, V, Id](
 
   
   override def check(proof: Proof[F, R, B, Id]): List[Diagnostic] = 
-    checkSteps(proof, proof.roots)
+    checkSteps(proof, proof.steps)
 }

@@ -28,6 +28,6 @@ object Proof {
 
 trait Proof[F, R, B, Id] {
   def getStep(id: Id): Either[Proof.StepNotFound[Id], Proof.Step[F, R, B, Id]]
-  def roots: Seq[Id]
+  def steps: Seq[Id]
 }
 
