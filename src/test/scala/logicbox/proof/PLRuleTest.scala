@@ -1,42 +1,38 @@
 package logicbox.proof
 
-import logicbox.framework.{Proof}
+import logicbox.framework.{Reference}
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.*
 import org.scalatest.matchers.should.Matchers.*
 import org.scalatest.Inspectors
 
-class PropLogicRulesTest extends AnyFunSpec {
-  import PropLogicRule._
-  import PropLogicViolation._
-  import Proof.Step
+class PLRuleTest extends AnyFunSpec {
+  import PLRule._
+  import PLViolation._
   import logicbox.formula._
 
   private val lexer = PLLexer()
   private val parser = PLParser()
   private def parse(str: String): PLFormula = parser(lexer(str))
 
-  private def line(formula: String, rule: PropLogicRule, refs: List[Step[PLFormula, PropLogicRule]]): Proof.Line[PLFormula, PropLogicRule] = {
-    StubLine(
-      formula = parse(formula),
-      rule = rule,
-      refs = refs
-    )
+  // fake things so tests still work (a little hacky, i admit)
+  private case class Line(formula: PLFormula, rule: PLRule, refs: List[Reference[PLFormula, PLBoxInfo]])
+    extends Reference.Line[PLFormula]
+  private case class Box(fst: PLFormula, lst: PLFormula) extends Reference.Box[PLFormula, PLBoxInfo] {
+    override def info = ()
+    override def assumption = fst
+    override def conclusion = lst
   }
 
-  private def stub(formula: String): Proof.Line[PLFormula, PropLogicRule] =
-    StubLine(
-      formula = parse(formula),
-      rule = null,
-      refs = Nil
-    )
+  private def stub(str: String): Reference[PLFormula, PLBoxInfo] = new Reference.Line[PLFormula] {
+    def formula = parse(str)
+  }
 
-  private def boxStub(ass: String, concl: String): Proof.Box[PLFormula, PropLogicRule, _] = StubBox(
-    info = (), proof = List(
-      StubLine(parse(ass), Assumption(), Nil),
-      stub(concl)
-    )
-  )
+  private def boxStub(ass: String, concl: String): Reference.Box[PLFormula, PLBoxInfo] =
+    Box(parse(ass), parse(concl))
+
+  private def line(fml: String, rl: PLRule, refs: List[Reference[PLFormula, PLBoxInfo]]): Line =
+    Line(parse(fml), rl, refs)
 
   describe("AndElim") {
     val leftRule = AndElim(Side.Left)
@@ -293,42 +289,6 @@ class PropLogicRulesTest extends AnyFunSpec {
       val l = line("q", rule, List(r0, r1))
       rule.check(l.formula, l.refs) should matchPattern {
         case List(ReferenceDoesntMatchRule(1, _)) => 
-      }
-    }
-  }
-
-  describe("extractAssumptionConclusionTest (helper function)") {
-    val emptybox = StubBox(info = (), proof = (Nil: List[Step[PLFormula, PropLogicRule]]))
-    it("should reject empty box") {
-      val box = emptybox
-      PropLogicRule.extractAssumptionConclusion(box) should matchPattern {
-        case Right(List(MiscellaneousViolation(_))) => 
-      }
-    }
-    it("should reject box where first line is not assumption") {
-      val assmp = StubLine(parse("p"), Premise(), Nil) // not assumption
-      val concl = stub("q")
-      val box = StubBox(info = (), proof = List(assmp, concl): List[Step[PLFormula, PropLogicRule]])
-      PropLogicRule.extractAssumptionConclusion(box) should matchPattern {
-        case Right(List(MiscellaneousViolation(_))) => 
-      }
-    }
-    it("should reject box where first line is a box") {
-      val box = StubBox(info = (), proof = List(
-        emptybox,
-        stub("q")
-      ))
-      PropLogicRule.extractAssumptionConclusion(box) should matchPattern {
-        case Right(List(MiscellaneousViolation(_))) => 
-      }
-    }
-    it("should reject box where last line is a box") {
-      val box = StubBox(info = (), proof = List(
-        StubLine(parse("p"), Assumption(), Nil),
-        emptybox
-      ))
-      PropLogicRule.extractAssumptionConclusion(box) should matchPattern {
-        case p @ Right(List(MiscellaneousViolation(_))) => 
       }
     }
   }

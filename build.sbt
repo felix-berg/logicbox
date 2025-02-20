@@ -3,7 +3,7 @@ val akkaHttpVersion = "10.5.0"
 
 lazy val app = project.in(file("."))
   .settings(
-    scalaVersion := "3.3.3",
+    scalaVersion := "3.4.3",
     libraryDependencies ++= Seq(
       "org.scala-lang" %% "toolkit" % "0.1.7",
 
