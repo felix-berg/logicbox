@@ -4,11 +4,13 @@ object ModifiableProof {
   sealed trait Diagnostic[+Id]
 
   enum Direction { case Above; case Below }
-  case object Root
-  case class Pos[Id](id: Id | Root.type, dir: Direction)
+
+  sealed trait Pos[+Id]
+  case object Top extends Pos[Nothing]
+  case class IdPos[+Id](id: Id, dir: Direction) extends Pos[Id]
 }
 
-trait ModifiableProof[F, R, B, Id] {
+trait ModifiableProof[F, R, B, Id] extends Proof[F, R, B, Id] {
   import ModifiableProof._
 
   private type Pf = ModifiableProof[F, R, B, Id]

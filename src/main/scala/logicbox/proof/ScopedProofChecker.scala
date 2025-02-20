@@ -29,7 +29,7 @@ class ScopedProofChecker[Id]
     steps.map {
       case stepId => 
         val optBoxSteps = proof.getStep(stepId) match {
-          case Right(Proof.Box(_, boxSteps: Seq[Id] @unchecked)) => 
+          case Right(Proof.Box(_, boxSteps: Seq[Id] @unchecked)) =>
             collectScopes(proof, boxSteps, stepId)
           case _ => Map.empty
         }
