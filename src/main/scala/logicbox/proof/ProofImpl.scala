@@ -89,12 +89,13 @@ case class ProofImpl[F, R, B, Id](
     } yield InsertResult(newStepSeq = rootSteps, stepsToBeAdded)
   }
 
-  private def insertStep(id: Id, step: ProofImpl.Step[F, R, B, Id], where: Pos[Id]): Either[Error[Id], Pf] =
-    for {
-      InsertResult(newRootSteps, modifiedSteps) <- insertId(id, where)
-      newSteps = steps + (id -> step) ++ modifiedSteps
-    } yield ProofImpl(rootSteps = newRootSteps, steps = newSteps)
-    
+  private def insertStep(
+    id: Id, step: ProofImpl.Step[F, R, B, Id], where: Pos[Id]
+  ): Either[Error[Id], Pf] = for {
+    InsertResult(newRootSteps, modifiedSteps) <- insertId(id, where)
+    newSteps = steps + (id -> step) ++ modifiedSteps
+  } yield ProofImpl(rootSteps = newRootSteps, steps = newSteps)
+
   override def addLine(id: Id, where: Pos[Id]): Either[Error[Id], Pf] =
     insertStep(id, ProofImpl.Line(None, None, Nil), where)
 
@@ -109,17 +110,23 @@ case class ProofImpl[F, R, B, Id](
     }
   } yield line
 
+  private def updateStep(stepId: Id, newStep: ProofImpl.Step[F, R, B, Id]): Pf =
+    ProofImpl(rootSteps = rootSteps, steps = steps + (stepId -> newStep))
+
   override def updateFormula(lineId: Id, formula: Option[F]): Either[Error[Id], Pf] = for {
     line <- getCurrentLine(lineId)
     newStep = Line(formula, line.rule, line.refs)
-  } yield ProofImpl(rootSteps = rootSteps, steps = steps + (lineId -> newStep))
+  } yield updateStep(lineId, newStep)
 
   override def updateRule(lineId: Id, rule: Option[R]): Either[Error[Id], Pf] = for {
     line <- getCurrentLine(lineId)
     newStep = Line(line.formula, rule, line.refs)
-  } yield ProofImpl(rootSteps = rootSteps, steps = steps + (lineId -> newStep))
+  } yield updateStep(lineId, newStep)
 
-  override def updateReference(lineId: Id, refIdx: Int, refId: Id): Either[Error[Id], Pf] = ???
+  override def updateReferences(lineId: Id, refs: List[Id]): Either[Error[Id], Pf] = for {
+    line <- getCurrentLine(lineId)
+    newStep = Line(line.formula, line.rule, refs)
+  } yield updateStep(lineId, newStep)
 
   override def removeStep(id: Id): Either[Error[Id], Pf] = ???
 }

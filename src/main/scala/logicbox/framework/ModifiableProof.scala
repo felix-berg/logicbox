@@ -24,7 +24,7 @@ trait ModifiableProof[F, R, B, Id] extends Proof[F, R, B, Id] {
 
   def updateFormula(lineId: Id, formula: F): Either[E, Pf]
   def updateRule(lineId: Id, rule: R): Either[E, Pf]
-  def updateReference(lineId: Id, refIdx: Int, refId: Id): Either[E, Pf]
+  def updateReferences(lineId: Id, refs: List[Id]): Either[E, Pf]
 
   def removeStep(id: Id): Either[E, Pf]
 }

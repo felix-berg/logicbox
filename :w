@@ -197,7 +197,7 @@ class ProofImplTest extends AnyFunSpec {
       }
     }
 
-    it("should report when attempting to update box") {
+    it("should report when updating box") {
       var proof: Pf = ProofImpl.empty
       proof = proof.addBox("box", ProofTop).getOrElse(???)
       proof.updateRule("box", Some(Good())) should matchPattern {
@@ -206,30 +206,11 @@ class ProofImplTest extends AnyFunSpec {
     }
   }
 
-  describe("ProofImpl::updateReferences") {
-    it("should update references correctly") {
+  describe("ProofImpl::updateReference") {
+    it("should add single reference to empty rule") {
       var proof: Pf = ProofImpl.empty
       proof = proof.addLine("line", ProofTop).getOrElse(???)
-      proof = proof.updateReferences("line", List("r1", "r2")).getOrElse(???)
-
-      proof.getStep("line") should matchPattern {
-        case Right(Proof.Line(None, None, List("r1", "r2"))) =>
-      }
-    }
-
-    it("should report when updating nonexistant line") {
-      val proof: Pf = ProofImpl.empty
-      proof.updateReferences("line", List("r1", "r2")) should matchPattern {
-        case Left(CannotUpdateStep("line", _)) =>
-      }
-    }
-
-    it("should report when attempting to update box") {
-      var proof: Pf = ProofImpl.empty
-      proof = proof.addBox("box", ProofTop).getOrElse(???)
-      proof.updateReferences("box", List("r1", "r2")) should matchPattern {
-        case Left(CannotUpdateStep("box", _)) =>
-      }
+      
     }
   }
 }
