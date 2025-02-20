@@ -128,5 +128,33 @@ case class ProofImpl[F, R, B, Id](
     newStep = Line(line.formula, line.rule, refs)
   } yield updateStep(lineId, newStep)
 
-  override def removeStep(id: Id): Either[Error[Id], Pf] = ???
+  private case class RemoveResult(
+    newStepSeq: List[Id], 
+    modifiedSteps: List[(Id, ProofImpl.Step[F, R, B, Id])]
+  )
+
+  private def removeIdFromProofStructure(idToRemove: Id, inList: List[Id]): Option[RemoveResult] =
+    inList.indexOf(idToRemove) match {
+      case idx if idx != -1 => 
+        val (bef, elm :: aft) = inList splitAt idx: @unchecked
+        Some(RemoveResult(bef ++ aft, Nil))
+
+      case _ => inList.foldLeft(None) {
+        case (Some(res), _) => Some(res)
+        case (None, stepId) => for {
+          step <- getStepImpl(stepId)
+          Box(info, boxSteps) <- step match {
+            case b: Box[B, Id] => Some(b)
+            case _ => None
+          }
+          RemoveResult(newStepSeq, modifiedSteps) <- removeIdFromProofStructure(idToRemove, boxSteps)
+          newBox = Box(info, newStepSeq)
+        } yield RemoveResult(newStepSeq, modifiedSteps :+ (stepId -> newBox))
+      }
+    }
+
+  override def removeStep(id: Id): Either[Error[Id], Pf] = for {
+    RemoveResult(newStepSeq, modifiedSteps) <- 
+      removeIdFromProofStructure(id, rootSteps).toRight(CannotRemoveStep(id, "step not found"))
+  } yield ProofImpl(rootSteps = newStepSeq, steps = steps.removed(id) ++ modifiedSteps)
 }

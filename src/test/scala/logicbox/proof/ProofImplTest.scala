@@ -232,4 +232,33 @@ class ProofImplTest extends AnyFunSpec {
       }
     }
   }
+
+  describe("ProofImpl::removeStep") {
+    it("should reject when removing line that doesn't exist") {
+      var proof: Pf = ProofImpl.empty
+      proof.removeStep("id") should matchPattern {
+        case Left(CannotRemoveStep("id", _)) =>
+      }
+    }
+
+    it("should correctly remove added line") {
+      var proof: Pf = ProofImpl.empty
+      proof = proof.addLine("line", ProofTop).getOrElse(???)
+      proof = proof.removeStep("line").getOrElse(???)
+      proof.getStep("line") should matchPattern {
+        case Left(Proof.StepNotFound("line", _)) =>
+      }
+    }
+
+    it("should correctly remove box within box") {
+      var proof: Pf = ProofImpl.empty
+      proof = proof.addBox("b1", ProofTop).getOrElse(???)
+      proof = proof.addBox("b2", BoxTop("b1")).getOrElse(???)
+      proof = proof.removeStep("b2").getOrElse(???)
+
+      proof.getStep("b2") should matchPattern {
+        case Left(Proof.StepNotFound("b2", _)) =>
+      }
+    }
+  }
 }
