@@ -43,7 +43,7 @@ class ScopedProofChecker[Id]
   }
 
   override def check(proof: Proof[Any, Any, Any, Id]): List[Diagnostic[Id]] = {
-    val scopes = collectScopes(proof, proof.steps)
+    val scopes = collectScopes(proof, proof.rootSteps)
     val allIdsInProof = scopes.keySet
 
     def checkRefs(stepId: Id, refs: Seq[Id], seenSteps: Set[Id], openBoxes: Set[Id]): List[Diagnostic[Id]] = {
@@ -80,6 +80,6 @@ class ScopedProofChecker[Id]
       }
     }
 
-    checkImpl(proof, proof.steps)
+    checkImpl(proof, proof.rootSteps)
   }
 }

@@ -2,25 +2,24 @@ package logicbox.proof
 
 import logicbox.framework.{RuleChecker, Proof, ProofChecker, Reference}
 
-object ProofCheckerImpl {
+object RuledBasedProofChecker {
   sealed trait Diagnostic[+Id, +V] {
     def stepId: Id
   }
 
   case class RuleViolation[Id, V](stepId: Id, violation: V) extends Diagnostic[Id, V]
-  case class StepIdNotFound[Id](stepId: Id, expl: String) extends Diagnostic[Id, Nothing]
+  case class StepNotFound[Id](stepId: Id, expl: String) extends Diagnostic[Id, Nothing]
   case class ReferenceIdNotFound[Id](stepId: Id, whichRef: Int, refId: Id, expl: String) extends Diagnostic[Id, Nothing]
   case class MalformedReference[Id](stepId: Id, whichRef: Int, refId: Id, expl: String) extends Diagnostic[Id, Nothing]
 }
 
-class ProofCheckerImpl[F, R, B, V, Id](
+class RuledBasedProofChecker[F, R, B, V, Id](
   val ruleChecker: RuleChecker[F, R, B, V]
-) extends ProofChecker[F, R, B, Id, ProofCheckerImpl.Diagnostic[Id, V]] {
+) extends ProofChecker[F, R, B, Id, RuledBasedProofChecker.Diagnostic[Id, V]] {
 
-  import Proof._
-  import ProofCheckerImpl._
+  import RuledBasedProofChecker._
   
-  type Diagnostic = ProofCheckerImpl.Diagnostic[Id, V]
+  type Diagnostic = RuledBasedProofChecker.Diagnostic[Id, V]
 
   type Pf = Proof[F, R, B, Id]
   private def resolveBoxReference(proof: Pf, stepId: Id, refIdx: Int, boxId: Id, box: Proof.Box[B, Id]): Either[List[Diagnostic], Reference.Box[F, B]] =
@@ -32,11 +31,11 @@ class ProofCheckerImpl[F, R, B, V, Id](
 
       names = List("assumption", "conclusion")
       (ass, concl) <- (names, ids, ids.map(proof.getStep)).zipped.toList.collect {
-        case (which, refId, Left(StepNotFound(_, expl))) => 
+        case (which, refId, Left(Proof.StepNotFound(_, expl))) => 
           Left(MalformedReference(stepId, refIdx, boxId, s"$which in box has invalid id (id: $refId)"))
-        case (which, refId, Right(Box(_, _))) => 
+        case (which, refId, Right(Proof.Box(_, _))) => 
           Left(MalformedReference(stepId, refIdx, boxId, s"$which in box is itself a box"))
-        case (_, _, Right(Line(formula: F @unchecked, _, _))) => Right(formula)
+        case (_, _, Right(Proof.Line(formula: F @unchecked, _, _))) => Right(formula)
       } match {
         case List(Right(ass), Right(concl)) => Right(ass, concl)
         case ls => 
@@ -45,7 +44,6 @@ class ProofCheckerImpl[F, R, B, V, Id](
           val assumptionAndConclusionAreTheSame = ids(0) == ids(1)
           if (assumptionAndConclusionAreTheSame) Left(dgns.take(1))
           else Left(dgns)
-
       }
     } yield ReferenceBoxImpl(box.info, ass, concl)
 
@@ -56,7 +54,7 @@ class ProofCheckerImpl[F, R, B, V, Id](
       refIdxs = (0 until refIds.length)
 
       mixed = (refIds, refIdxs, refSteps).zipped.toList.collect {
-        case (refId, refIdx, Left(StepNotFound(_, expl))) => 
+        case (refId, refIdx, Left(Proof.StepNotFound(_, expl))) => 
           Left(List(ReferenceIdNotFound(stepId, refIdx, refId, expl)))
 
         case (refId, refIdx, Right(b: Proof.Box[B, Id])) => 
@@ -77,14 +75,14 @@ class ProofCheckerImpl[F, R, B, V, Id](
 
   private def checkStep(proof: Proof[F, R, B, Id], id: Id, step: Proof.Step[F, R, B, Id]): List[Diagnostic] = 
     (step: @unchecked) match {
-      case Line(formula: F @unchecked, rule: R @unchecked, ids: Seq[Id] @unchecked) =>
+      case Proof.Line(formula: F @unchecked, rule: R @unchecked, ids: Seq[Id] @unchecked) =>
         resolveReferences(proof, id, ids) match {
           case Right(refs) => 
             ruleChecker.check(rule, formula, refs).map { v => RuleViolation(id, v) }
 
           case Left(diagnostics) => diagnostics
         }
-      case Box(_, ids: Seq[Id] @unchecked) => checkSteps(proof, ids)
+      case Proof.Box(_, ids: Seq[Id] @unchecked) => checkSteps(proof, ids)
     }
 
   private def checkSteps(proof: Proof[F, R, B, Id], stepIds: Seq[Id]): List[Diagnostic] =
@@ -93,11 +91,11 @@ class ProofCheckerImpl[F, R, B, V, Id](
       (either, id) <- ids.map(proof.getStep).zip(ids)
       res <- either match {
         case Right(step) => checkStep(proof, id, step)
-        case Left(StepNotFound(id, expl)) => List(StepIdNotFound(id, expl))
+        case Left(Proof.StepNotFound(id, expl)) => List(StepNotFound(id, expl))
       }
     } yield res
 
   
   override def check(proof: Proof[F, R, B, Id]): List[Diagnostic] = 
-    checkSteps(proof, proof.steps)
+    checkSteps(proof, proof.rootSteps)
 }

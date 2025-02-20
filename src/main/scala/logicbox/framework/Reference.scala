@@ -3,7 +3,7 @@ package logicbox.framework
 sealed trait Reference[+Formula, +BoxInfo]
 
 object Reference {
-  trait Line[+Fm] extends Reference[Fm, Nothing] {
+  trait Line[Fm] extends Reference[Fm, Nothing] {
     def formula: Fm
   }
 

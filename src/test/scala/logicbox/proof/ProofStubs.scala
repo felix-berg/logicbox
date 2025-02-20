@@ -30,7 +30,7 @@ object ProofStubs {
   ) extends Proof.Box[StubBoxInfo, Id]
 
   case class StubProof(
-    override val steps: Seq[Id] = Seq(),
+    override val rootSteps: Seq[Id] = Seq(),
     val map: Map[Id, Proof.Step[F, R, B, Id]] = Map.empty
   ) extends Proof[F, R, B, Id] {
     override def getStep(id: Id): Either[Proof.StepNotFound[Id], Proof.Step[F, R, B, Id]] = 

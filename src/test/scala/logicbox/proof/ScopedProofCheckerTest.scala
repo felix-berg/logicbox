@@ -21,7 +21,7 @@ class ScopedProofCheckerTest extends AnyFunSpec {
 
     it("should diallow references to lines after current line") {
       val proof = StubProof(
-        steps = Seq("1", "2"),
+        rootSteps = Seq("1", "2"),
         map = Map(
           "1" -> StubLine(refs = Seq("2")),
           "2" -> StubLine()
@@ -33,7 +33,7 @@ class ScopedProofCheckerTest extends AnyFunSpec {
 
     it("should diallow references to lines after current line (where step is not first step)") {
       val proof = StubProof(
-        steps = Seq("3", "1", "2"),
+        rootSteps = Seq("3", "1", "2"),
         map = Map(
           "1" -> StubLine(refs = Seq("2")),
           "2" -> StubLine(),
@@ -46,7 +46,7 @@ class ScopedProofCheckerTest extends AnyFunSpec {
 
     it("should report later reference used if happens in box") {
       val proof = StubProof(
-        steps = Seq("box", "l2"),
+        rootSteps = Seq("box", "l2"),
         map = Map(
           "box" -> StubBox(steps = Seq("l1")),
           "l1" -> StubLine(refs = Seq("l2")), // downward reference
@@ -63,7 +63,7 @@ class ScopedProofCheckerTest extends AnyFunSpec {
 
     it("should not stop checking after box") {
       val proof = StubProof(
-        steps = Seq("box", "line", "down"),
+        rootSteps = Seq("box", "line", "down"),
         map = Map(
           "box" -> StubBox(),
           "line" -> StubLine(refs = Seq("box", "down")),
@@ -77,7 +77,7 @@ class ScopedProofCheckerTest extends AnyFunSpec {
     it("should not allow reference to box which has not yet been closed") {
       println("hi")
       val proof = StubProof(
-        steps = Seq("box"),
+        rootSteps = Seq("box"),
         map = Map(
           "box" -> StubBox(steps = Seq("line")),
           "line" -> StubLine(refs = Seq("box"))
@@ -89,7 +89,7 @@ class ScopedProofCheckerTest extends AnyFunSpec {
 
     it("should not notice reference which simply doesn't have a scope (not a part of proof)") {
       val proof = StubProof(
-        steps = Seq("1"),
+        rootSteps = Seq("1"),
         map = Map(
           "1" -> StubLine(refs = Seq("2")),
           "2" -> StubLine() // two is 'nowhere'
@@ -101,7 +101,7 @@ class ScopedProofCheckerTest extends AnyFunSpec {
 
     it("should disallow reading from closed box") {
       val proof = StubProof(
-        steps = Seq("b1", "b2"),
+        rootSteps = Seq("b1", "b2"),
         map = Map(
           "b1" -> StubBox(steps = Seq("line1")),
           "b2" -> StubBox(steps = Seq("line2")),
@@ -115,7 +115,7 @@ class ScopedProofCheckerTest extends AnyFunSpec {
 
     it("should report ref to later step when referring to later box") {
       val proof = StubProof(
-        steps = Seq("1", "box"),
+        rootSteps = Seq("1", "box"),
         map = Map(
           "1" -> StubLine(refs = Seq("box")),
           "box" -> StubBox(steps = Seq("2")),
