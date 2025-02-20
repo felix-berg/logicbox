@@ -2,7 +2,7 @@ package logicbox.framework
 
 object ModifiableProof {
   sealed trait Diagnostic[+Id]
-  case class PositionNotFound[Id](pos: Pos[Id]) extends Diagnostic[Id]
+  case class InvalidPosition[Id](pos: Pos[Id], expl: String) extends Diagnostic[Id]
 
   enum Direction { case Above; case Below }
 

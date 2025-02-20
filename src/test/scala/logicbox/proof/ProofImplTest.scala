@@ -72,6 +72,33 @@ class ProofImplTest extends AnyFunSpec {
 
       box.steps shouldBe Seq("l2", "l1")
     }
+
+    it("should report error when adding to nonexistent line") {
+      var proof: Pf = ProofImpl.empty
+      proof = proof.addLine("l1", ProofTop).getOrElse(???)
+      proof.addLine("l2", AtLine("l3", Direction.Above)) should matchPattern {
+        case Left(List(InvalidPosition(AtLine("l3", Direction.Above), _))) =>
+      }
+      proof.addLine("l2", AtLine("l3", Direction.Below)) should matchPattern {
+        case Left(List(InvalidPosition(AtLine("l3", Direction.Below), _))) =>
+      }
+    }
+
+    it("should report error when adding to top of box nonexistent") {
+      var proof: Pf = ProofImpl.empty
+      proof = proof.addBox("box", ProofTop).getOrElse(???)
+      proof.addLine("l1", BoxTop("bex")) should matchPattern {
+        case Left(List(InvalidPosition(BoxTop("bex"), _))) => 
+      }
+    }
+
+    it("should report error when adding to top of box, but id is line") {
+      var proof: Pf = ProofImpl.empty
+      proof = proof.addLine("line", ProofTop).getOrElse(???)
+      proof.addLine("l1", BoxTop("line")) should matchPattern {
+        case Left(List(InvalidPosition(BoxTop("line"), _))) => 
+      }
+    }
   }
 
   describe("ProofImpl::addBox") {

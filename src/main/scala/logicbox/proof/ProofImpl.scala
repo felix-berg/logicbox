@@ -31,23 +31,25 @@ case class ProofImpl[F, R, B, Id](
   private type PStep = Proof.Step[Option[F], Option[R], Option[B], Id]
 
   override def getStep(id: Id): Either[NotFound, PStep] = {
-    steps.get(id) match {
-      case Some(step: PStep @unchecked) => Right(step)
-      case None => Left(Proof.StepNotFound(id, "no such step"))
-    }
+    steps.get(id)
+      .collect{ case s: PStep @unchecked => s } // will always satisfy Proof.Step
+      .toRight(Proof.StepNotFound(id, "no such step"))
   }
 
-  private case class InsertResult(stepSeq: List[Id], modifiedSteps: List[(Id, ProofImpl.Step[F, R, B, Id])] = Nil)
+  private case class InsertResult(
+    newStepSeq: List[Id], 
+    modifiedSteps: List[(Id, ProofImpl.Step[F, R, B, Id])] = Nil
+  )
 
   private def insertIdAtIdx(idToInsert: Id, idx: Int, dir: Direction, inList: List[Id]): InsertResult = {
     assert(inList.length > idx)
     val (before, elm :: after) = inList.splitAt(idx): @unchecked // unchecked because elm has index `idx`, so always suceeds
     dir match {
       case Direction.Above => InsertResult(
-        stepSeq = before ++ (idToInsert :: elm :: after)
+        newStepSeq = before ++ (idToInsert :: elm :: after)
       )
       case Direction.Below => InsertResult(
-        stepSeq = (before :+ elm) ++ (idToInsert :: after)
+        newStepSeq = (before :+ elm) ++ (idToInsert :: after)
       )
     }
   }
@@ -60,30 +62,30 @@ case class ProofImpl[F, R, B, Id](
         case (Some(res), _) => Some(res) // when found, 'break'
         case (None, stepId) => steps(stepId) match {
           case Box(info, steps) => for {
-            InsertResult(stepSeq, modifiedSteps) <- insertIdAtLine(idToInsert, whereId, dir, steps)
+            InsertResult(stepSeq, stepsToBeAdded) <- insertIdAtLine(idToInsert, whereId, dir, steps)
             box = Box(info, stepSeq)
-          } yield InsertResult(inList, (stepId -> box) :: modifiedSteps)
+          } yield InsertResult(inList, (stepId -> box) :: stepsToBeAdded)
           case _ => None
         }
       }
     }
   
   private def insertId(id: Id, where: Pos[Id]): Either[List[D], InsertResult] = where match {
-    case ProofTop => Right(InsertResult(stepSeq = id :: rootSteps))
+    case ProofTop => Right(InsertResult(newStepSeq = id :: rootSteps))
 
     case AtLine(whereId: Id, dir) => 
       insertIdAtLine(id, whereId, dir, rootSteps)
-        .toRight(List(PositionNotFound(where)))
+        .toRight(List(InvalidPosition(where, "no line with given id")))
 
     case BoxTop(boxId) => for {
-      step <- steps.get(boxId).toRight(???) // (PositionNotFound(where))
+      step <- steps.get(boxId).toRight(List(InvalidPosition(where, "no box with given id")))
       Box(info, boxSteps) <- step match {
         case b: Box[B, Id] => Right(b)
-        case _ => Left(???)
+        case _ => Left(List(InvalidPosition(where, "id is a line, not a box")))
       }
       newBox = ProofImpl.Box(info, id :: boxSteps)
-      modifiedSteps = List(boxId -> newBox)
-    } yield InsertResult(stepSeq = rootSteps, modifiedSteps)
+      stepsToBeAdded = List(boxId -> newBox)
+    } yield InsertResult(newStepSeq = rootSteps, stepsToBeAdded)
   }
 
   private def insertStep(id: Id, step: ProofImpl.Step[F, R, B, Id], where: Pos[Id]): Either[List[D], Pf] =
