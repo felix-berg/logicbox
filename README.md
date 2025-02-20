@@ -48,18 +48,15 @@ Possible commands are
     - newLineUuid
     - neighbourUuid
     - placement: (enum "before"/"after")
-- "removeLine"
+- "removeStep"
   - options:
-    - lineUuid
-- "removeBox"
-  - options:
-    - boxUuid
+    - uuid
 - "updateLine"
   - options:
     - lineUuid
     - formula (null or string)
     - rule (null or string)
-    - refs ([<uuid>] or string)
+    - refs (null or [<uuid>])
 - (maybe in future: "updateBox")
 
 Note to self: if step removed, should still respond with proof tree with 'dangling' uuids.
