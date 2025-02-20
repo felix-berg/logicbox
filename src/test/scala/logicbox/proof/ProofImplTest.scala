@@ -260,5 +260,20 @@ class ProofImplTest extends AnyFunSpec {
         case Left(Proof.StepNotFound("b2", _)) =>
       }
     }
+
+    it("should delete inner line when box is destroyed") {
+      var proof: Pf = ProofImpl.empty
+      proof = proof.addBox("box", ProofTop).getOrElse(???)
+      proof = proof.addLine("line", BoxTop("box")).getOrElse(???)
+      proof = proof.removeStep("box").getOrElse(???)
+
+      proof.getStep("line") should matchPattern {
+        case Left(Proof.StepNotFound("line", _)) =>
+      }
+    }
+
+    // TODO: think some more about cycles, maybe generally
+    //   - shouldn't be possible here, since position is absolute, can never nest in reverse
+    //   - careful tho!
   }
 }

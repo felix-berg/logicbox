@@ -4,6 +4,7 @@ import logicbox.framework.{Proof, ModifiableProof}
 import logicbox.framework.ModifiableProof.Pos
 import logicbox.proof.ProofImpl.Line
 import logicbox.proof.ProofImpl.Box
+import scala.annotation.meta.getter
 
 object ProofImpl {
   sealed trait Step[+F, +R, +B, +Id]
@@ -153,8 +154,21 @@ case class ProofImpl[F, R, B, Id](
       }
     }
 
+  private def computeReachableNodes(steps: List[Id], newMap: Map[Id, ProofImpl.Step[F, R, B, Id]]): Set[Id] = 
+    val ls = for {
+      id <- steps
+      step <- newMap.get(id)
+      reachable = step match {
+        case Box(info, steps) => computeReachableNodes(steps, newMap) + id
+        case _ => Set(id)
+      }
+    } yield reachable
+    ls.flatten.toSet
+
   override def removeStep(id: Id): Either[Error[Id], Pf] = for {
     RemoveResult(newStepSeq, modifiedSteps) <- 
       removeIdFromProofStructure(id, rootSteps).toRight(CannotRemoveStep(id, "step not found"))
-  } yield ProofImpl(rootSteps = newStepSeq, steps = steps.removed(id) ++ modifiedSteps)
+    newMap = (steps - id) ++ modifiedSteps
+    toRemove = steps.keySet -- computeReachableNodes(newStepSeq, newMap)
+  } yield ProofImpl(rootSteps = newStepSeq, steps = newMap -- toRemove)
 }
