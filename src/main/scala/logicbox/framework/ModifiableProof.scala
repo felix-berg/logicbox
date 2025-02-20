@@ -1,8 +1,9 @@
 package logicbox.framework
 
 object ModifiableProof {
-  sealed trait Diagnostic[+Id]
-  case class InvalidPosition[Id](pos: Pos[Id], expl: String) extends Diagnostic[Id]
+  sealed trait Error[+Id]
+  case class InvalidPosition[Id](pos: Pos[Id], expl: String) extends Error[Id]
+  case class CannotUpdateStep[Id](stepId: Id, expl: String) extends Error[Id]
 
   enum Direction { case Above; case Below }
 
@@ -16,14 +17,14 @@ trait ModifiableProof[F, R, B, Id] extends Proof[F, R, B, Id] {
   import ModifiableProof._
 
   private type Pf = ModifiableProof[F, R, B, Id]
-  private type D = Diagnostic[Id]
+  private type E = Error[Id]
 
-  def addLine(id: Id, where: Pos[Id]): Either[List[D], Pf]
-  def addBox(id: Id, where: Pos[Id]): Either[List[D], Pf]
+  def addLine(id: Id, where: Pos[Id]): Either[E, Pf]
+  def addBox(id: Id, where: Pos[Id]): Either[E, Pf]
 
-  def updateFormula(lineId: Id, formula: F): Either[List[D], Pf]
-  def updateRule(lineId: Id, rule: R): Either[List[D], Pf]
-  def updateReference(lineId: Id, refIdx: Int, refId: Id): Either[List[D], Pf]
+  def updateFormula(lineId: Id, formula: F): Either[E, Pf]
+  def updateRule(lineId: Id, rule: R): Either[E, Pf]
+  def updateReference(lineId: Id, refIdx: Int, refId: Id): Either[E, Pf]
 
-  def removeStep(id: Id): Either[List[D], Pf]
+  def removeStep(id: Id): Either[E, Pf]
 }

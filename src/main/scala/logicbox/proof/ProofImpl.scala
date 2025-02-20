@@ -1,7 +1,6 @@
 package logicbox.proof
 
 import logicbox.framework.{Proof, ModifiableProof}
-import logicbox.framework.ModifiableProof.Diagnostic
 import logicbox.framework.ModifiableProof.Pos
 import logicbox.proof.ProofImpl.Line
 import logicbox.proof.ProofImpl.Box
@@ -25,13 +24,15 @@ case class ProofImpl[F, R, B, Id](
 ) extends ModifiableProof[Option[F], Option[R], Option[B], Id]
 {
   import ModifiableProof._
-  private type D = ModifiableProof.Diagnostic[Id]
+  private type D = ModifiableProof.Error[Id]
   private type Pf = ModifiableProof[Option[F], Option[R], Option[B], Id]
   private type NotFound = Proof.StepNotFound[Id]
   private type PStep = Proof.Step[Option[F], Option[R], Option[B], Id]
 
+  private def getStepImpl(id: Id): Option[ProofImpl.Step[F, R, B, Id]] = steps.get(id)
+
   override def getStep(id: Id): Either[NotFound, PStep] = {
-    steps.get(id)
+    getStepImpl(id)
       .collect{ case s: PStep @unchecked => s } // will always satisfy Proof.Step
       .toRight(Proof.StepNotFound(id, "no such step"))
   }
@@ -70,38 +71,55 @@ case class ProofImpl[F, R, B, Id](
       }
     }
   
-  private def insertId(id: Id, where: Pos[Id]): Either[List[D], InsertResult] = where match {
+  private def insertId(id: Id, where: Pos[Id]): Either[Error[Id], InsertResult] = where match {
     case ProofTop => Right(InsertResult(newStepSeq = id :: rootSteps))
 
     case AtLine(whereId: Id, dir) => 
       insertIdAtLine(id, whereId, dir, rootSteps)
-        .toRight(List(InvalidPosition(where, "no line with given id")))
+        .toRight(InvalidPosition(where, "no line with given id"))
 
     case BoxTop(boxId) => for {
-      step <- steps.get(boxId).toRight(List(InvalidPosition(where, "no box with given id")))
+      step <- getStepImpl(boxId).toRight(InvalidPosition(where, "no box with given id"))
       Box(info, boxSteps) <- step match {
         case b: Box[B, Id] => Right(b)
-        case _ => Left(List(InvalidPosition(where, "id is a line, not a box")))
+        case _ => Left(InvalidPosition(where, "id is a line, not a box"))
       }
       newBox = ProofImpl.Box(info, id :: boxSteps)
       stepsToBeAdded = List(boxId -> newBox)
     } yield InsertResult(newStepSeq = rootSteps, stepsToBeAdded)
   }
 
-  private def insertStep(id: Id, step: ProofImpl.Step[F, R, B, Id], where: Pos[Id]): Either[List[D], Pf] =
+  private def insertStep(id: Id, step: ProofImpl.Step[F, R, B, Id], where: Pos[Id]): Either[Error[Id], Pf] =
     for {
       InsertResult(newRootSteps, modifiedSteps) <- insertId(id, where)
       newSteps = steps + (id -> step) ++ modifiedSteps
     } yield ProofImpl(rootSteps = newRootSteps, steps = newSteps)
     
-  override def addLine(id: Id, where: Pos[Id]): Either[List[D], Pf] =
+  override def addLine(id: Id, where: Pos[Id]): Either[Error[Id], Pf] =
     insertStep(id, ProofImpl.Line(None, None, Nil), where)
 
-  override def addBox(id: Id, where: Pos[Id]): Either[List[D], Pf] =
+  override def addBox(id: Id, where: Pos[Id]): Either[Error[Id], Pf] =
     insertStep(id, ProofImpl.Box(None, Nil), where)
 
-  override def updateReference(lineId: Id, refIdx: Int, refId: Id): Either[List[D], Pf] = ???
-  override def updateFormula(lineId: Id, formula: Option[F]): Either[List[D], Pf] = ???
-  override def removeStep(id: Id): Either[List[D], Pf] = ???
-  override def updateRule(lineId: Id, rule: Option[R]): Either[List[D], Pf] = ???
+  private def getCurrentLine(lineId: Id): Either[Error[Id], ProofImpl.Line[F, R, Id]] = for {
+    step <- getStepImpl(lineId).toRight(CannotUpdateStep(lineId, "no step with given id"))
+    line <- step match {
+      case line: Line[F, R, Id] => Right(line)
+      case _ => Left(CannotUpdateStep(lineId, "step is not a line"))
+    }
+  } yield line
+
+  override def updateFormula(lineId: Id, formula: Option[F]): Either[Error[Id], Pf] = for {
+    line <- getCurrentLine(lineId)
+    newStep = Line(formula, line.rule, line.refs)
+  } yield ProofImpl(rootSteps = rootSteps, steps = steps + (lineId -> newStep))
+
+  override def updateRule(lineId: Id, rule: Option[R]): Either[Error[Id], Pf] = for {
+    line <- getCurrentLine(lineId)
+    newStep = Line(line.formula, rule, line.refs)
+  } yield ProofImpl(rootSteps = rootSteps, steps = steps + (lineId -> newStep))
+
+  override def updateReference(lineId: Id, refIdx: Int, refId: Id): Either[Error[Id], Pf] = ???
+
+  override def removeStep(id: Id): Either[Error[Id], Pf] = ???
 }
