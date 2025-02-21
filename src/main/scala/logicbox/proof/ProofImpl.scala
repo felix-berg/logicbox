@@ -97,11 +97,22 @@ case class ProofImpl[F, R, B, Id](
     newSteps = steps + (id -> step) ++ modifiedSteps
   } yield ProofImpl(rootSteps = newRootSteps, steps = newSteps)
 
-  override def addLine(id: Id, where: Pos[Id]): Either[Error[Id], Pf] =
-    insertStep(id, ProofImpl.Line(None, None, Nil), where)
+  private def assertStepNotExists(id: Id): Either[Error[Id], Unit] = for {
+    _ <- getStepImpl(id) match {
+      case Some(_) => Left(IdAlreadyInUse(id))
+      case None => Right(())
+    }
+  } yield ()
 
-  override def addBox(id: Id, where: Pos[Id]): Either[Error[Id], Pf] =
-    insertStep(id, ProofImpl.Box(None, Nil), where)
+  override def addLine(id: Id, where: Pos[Id]): Either[Error[Id], Pf] = for {
+    _ <- assertStepNotExists(id)
+    pf <- insertStep(id, ProofImpl.Line(None, None, Nil), where)
+  } yield pf
+
+  override def addBox(id: Id, where: Pos[Id]): Either[Error[Id], Pf] = for {
+    _ <- assertStepNotExists(id)
+    pf <- insertStep(id, ProofImpl.Box(None, Nil), where)
+  } yield pf
 
   private def getCurrentLine(lineId: Id): Either[Error[Id], ProofImpl.Line[F, R, Id]] = for {
     step <- getStepImpl(lineId).toRight(CannotUpdateStep(lineId, "no step with given id"))

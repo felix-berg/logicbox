@@ -99,6 +99,14 @@ class ProofImplTest extends AnyFunSpec {
         case Left(InvalidPosition(BoxTop("line"), _)) => 
       }
     }
+
+    it("should report error when adding existing line") {
+      var proof: Pf = ProofImpl.empty
+      proof = proof.addLine("line", ProofTop).getOrElse(???)
+      proof.addLine("line", ProofTop) should matchPattern {
+        case Left(IdAlreadyInUse("line")) =>
+      }
+    }
   }
 
   describe("ProofImpl::addBox") {
@@ -149,6 +157,14 @@ class ProofImplTest extends AnyFunSpec {
       step.isInstanceOf[Proof.Box[?, ?]] shouldBe true
       val box = step.asInstanceOf[Proof.Box[B, Id]]
       box.steps shouldBe Seq("b2")
+    }
+
+    it("should report error when adding existing box") {
+      var proof: Pf = ProofImpl.empty
+      proof = proof.addBox("box", ProofTop).getOrElse(???)
+      proof.addBox("box", ProofTop) should matchPattern {
+        case Left(IdAlreadyInUse("box")) =>
+      }
     }
   }
 

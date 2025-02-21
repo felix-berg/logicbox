@@ -5,6 +5,7 @@ object ModifiableProof {
   case class InvalidPosition[Id](pos: Pos[Id], expl: String) extends Error[Id]
   case class CannotUpdateStep[Id](stepId: Id, expl: String) extends Error[Id]
   case class CannotRemoveStep[Id](stepId: Id, expl: String) extends Error[Id]
+  case class IdAlreadyInUse[Id](id: Id) extends Error[Id]
 
   enum Direction { case Above; case Below }
 
