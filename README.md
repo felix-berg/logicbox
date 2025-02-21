@@ -61,6 +61,31 @@ Possible commands are
 
 Note to self: if step removed, should still respond with proof tree with 'dangling' uuids.
 
+##### Proof 
+A proof is a list of proof steps, either a line or a box. Lines are as follows
+```js
+{
+  stepType: "line",
+  uuid: "...",
+  formula: {
+    userInput: "p AND q implies r and not s",
+    ascii: "(p and q) -> (r and not s)",
+    latex: "(p \\land q) \\rightarrow (r \\land \\lnot s)"
+  },
+  justification: {
+    rule: "implies_intro",
+    refs: [ "...", "..." ]
+  }
+}
+```
+```js
+{
+  stepType: "box",
+  uuid: "...",
+  proof: [ /* ... steps ... */ ]
+}
+```
+
 ##### Diagnostics
 ```js
 {

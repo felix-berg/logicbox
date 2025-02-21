@@ -1,0 +1,16 @@
+package logicbox.marshal
+
+import logicbox.framework.Proof
+import spray.json._
+
+case class SimpleProofJsonWriter[F, R, Id](
+  idWriter: JsonWriter[Id], formulaWriter: JsonWriter[F],
+  justficationWriter: JsonWriter[Justification[R, Id]]
+) extends RootJsonWriter[Proof[F, R, ?, Id]] {
+
+  override def write(obj: Proof[F, R, ?, Id]): JsValue = JsObject(
+    idWriter.write(null),
+    idWriter.write(null)
+  )
+
+}
