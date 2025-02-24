@@ -10,14 +10,14 @@ import logicbox.framework.ModifiableProof._
 import logicbox.framework.Proof
 import logicbox.framework.ModifiableProof
 
-class ProofImplTest extends AnyFunSpec {
+class OptionalProofTest extends AnyFunSpec {
   import ProofStubs._
 
   type Pf = ModifiableProof[Option[StubFormula], Option[StubRule], Option[StubBoxInfo], Id]
 
   describe("ProofImplTest::addLine") {
     it("should add empty line to empty proof") {
-      val proof: Pf = ProofImpl.empty
+      val proof: Pf = OptionalProof.empty
       proof.addLine("id", ProofTop) match {
         case Right(proof1) => 
           proof1.getStep("id") should matchPattern {
@@ -29,7 +29,7 @@ class ProofImplTest extends AnyFunSpec {
     }
 
     it("should allow adding below existing line") {
-      var proof: Pf = ProofImpl.empty
+      var proof: Pf = OptionalProof.empty
 
       proof = proof.addLine("1", ProofTop).getOrElse(???)
       proof = proof.addLine("2", AtLine("1", Direction.Below)).getOrElse(???)
@@ -41,7 +41,7 @@ class ProofImplTest extends AnyFunSpec {
     }
 
     it("should allow adding above existing line") {
-      var proof: Pf = ProofImpl.empty
+      var proof: Pf = OptionalProof.empty
 
       proof = proof.addLine("1", ProofTop).getOrElse(???)
       proof = proof.addLine("2", AtLine("1", Direction.Above)).getOrElse(???)
@@ -59,7 +59,7 @@ class ProofImplTest extends AnyFunSpec {
     }
 
     it("should allow adding line inside box by prepending to existing line") {
-      var proof: Pf = ProofImpl.empty
+      var proof: Pf = OptionalProof.empty
       proof = proof.addBox("box", ProofTop).getOrElse(???)
       proof = proof.addLine("l1", BoxTop("box")).getOrElse(???)
       proof = proof.addLine("l2", AtLine("l1", Direction.Above)).getOrElse(???)
@@ -74,7 +74,7 @@ class ProofImplTest extends AnyFunSpec {
     }
 
     it("should report error when adding to nonexistent line") {
-      var proof: Pf = ProofImpl.empty
+      var proof: Pf = OptionalProof.empty
       proof = proof.addLine("l1", ProofTop).getOrElse(???)
       proof.addLine("l2", AtLine("l3", Direction.Above)) should matchPattern {
         case Left(InvalidPosition(AtLine("l3", Direction.Above), _)) =>
@@ -85,7 +85,7 @@ class ProofImplTest extends AnyFunSpec {
     }
 
     it("should report error when adding to top of box nonexistent") {
-      var proof: Pf = ProofImpl.empty
+      var proof: Pf = OptionalProof.empty
       proof = proof.addBox("box", ProofTop).getOrElse(???)
       proof.addLine("l1", BoxTop("bex")) should matchPattern {
         case Left(InvalidPosition(BoxTop("bex"), _)) => 
@@ -93,7 +93,7 @@ class ProofImplTest extends AnyFunSpec {
     }
 
     it("should report error when adding to top of box, but id is line") {
-      var proof: Pf = ProofImpl.empty
+      var proof: Pf = OptionalProof.empty
       proof = proof.addLine("line", ProofTop).getOrElse(???)
       proof.addLine("l1", BoxTop("line")) should matchPattern {
         case Left(InvalidPosition(BoxTop("line"), _)) => 
@@ -101,7 +101,7 @@ class ProofImplTest extends AnyFunSpec {
     }
 
     it("should report error when adding existing line") {
-      var proof: Pf = ProofImpl.empty
+      var proof: Pf = OptionalProof.empty
       proof = proof.addLine("line", ProofTop).getOrElse(???)
       proof.addLine("line", ProofTop) should matchPattern {
         case Left(IdAlreadyInUse("line")) =>
@@ -111,7 +111,7 @@ class ProofImplTest extends AnyFunSpec {
 
   describe("ProofImpl::addBox") {
     it("should allow adding empty box to proof") {
-      var proof: Pf = ProofImpl.empty
+      var proof: Pf = OptionalProof.empty
       proof = proof.addBox("box", ProofTop).getOrElse(???)
       
       proof.getStep("box") should matchPattern {
@@ -121,7 +121,7 @@ class ProofImplTest extends AnyFunSpec {
     }
 
     it("should allow adding box above another box") {
-      var proof: Pf = ProofImpl.empty
+      var proof: Pf = OptionalProof.empty
       proof = proof.addBox("b1", ProofTop).getOrElse(???)
       
       proof.getStep("b1") should matchPattern {
@@ -138,7 +138,7 @@ class ProofImplTest extends AnyFunSpec {
     }
 
     it("should allow adding box as only element of box") {
-      var proof: Pf = ProofImpl.empty
+      var proof: Pf = OptionalProof.empty
       proof = proof.addBox("b1", ProofTop).getOrElse(???)
       
       proof.getStep("b1") should matchPattern {
@@ -160,7 +160,7 @@ class ProofImplTest extends AnyFunSpec {
     }
 
     it("should report error when adding existing box") {
-      var proof: Pf = ProofImpl.empty
+      var proof: Pf = OptionalProof.empty
       proof = proof.addBox("box", ProofTop).getOrElse(???)
       proof.addBox("box", ProofTop) should matchPattern {
         case Left(IdAlreadyInUse("box")) =>
@@ -170,7 +170,7 @@ class ProofImplTest extends AnyFunSpec {
 
   describe("ProofImpl::updateFormula") {
     it("should update formula correctly") {
-      var proof: Pf = ProofImpl.empty
+      var proof: Pf = OptionalProof.empty
       proof = proof.addLine("line", ProofTop).getOrElse(???)
       proof = proof.updateFormula("line", Some(StubFormula(2))).getOrElse(???)
 
@@ -180,14 +180,14 @@ class ProofImplTest extends AnyFunSpec {
     }
 
     it("should report when updating nonexistant line") {
-      val proof: Pf = ProofImpl.empty
+      val proof: Pf = OptionalProof.empty
       proof.updateFormula("line", Some(StubFormula(2))) should matchPattern {
         case Left(CannotUpdateStep("line", _)) =>
       }
     }
 
     it("should report when updating box") {
-      var proof: Pf = ProofImpl.empty
+      var proof: Pf = OptionalProof.empty
       proof = proof.addBox("box", ProofTop).getOrElse(???)
       proof.updateFormula("box", Some(StubFormula(2))) should matchPattern {
         case Left(CannotUpdateStep("box", _)) =>
@@ -197,7 +197,7 @@ class ProofImplTest extends AnyFunSpec {
 
   describe("ProofImpl::updateRule") {
     it("should update rule correctly") {
-      var proof: Pf = ProofImpl.empty
+      var proof: Pf = OptionalProof.empty
       proof = proof.addLine("line", ProofTop).getOrElse(???)
       proof = proof.updateRule("line", Some(Good())).getOrElse(???)
 
@@ -207,14 +207,14 @@ class ProofImplTest extends AnyFunSpec {
     }
 
     it("should report when updating nonexistant line") {
-      val proof: Pf = ProofImpl.empty
+      val proof: Pf = OptionalProof.empty
       proof.updateRule("line", Some(Bad())) should matchPattern {
         case Left(CannotUpdateStep("line", _)) =>
       }
     }
 
     it("should report when attempting to update box") {
-      var proof: Pf = ProofImpl.empty
+      var proof: Pf = OptionalProof.empty
       proof = proof.addBox("box", ProofTop).getOrElse(???)
       proof.updateRule("box", Some(Good())) should matchPattern {
         case Left(CannotUpdateStep("box", _)) =>
@@ -224,7 +224,7 @@ class ProofImplTest extends AnyFunSpec {
 
   describe("ProofImpl::updateReferences") {
     it("should update references correctly") {
-      var proof: Pf = ProofImpl.empty
+      var proof: Pf = OptionalProof.empty
       proof = proof.addLine("line", ProofTop).getOrElse(???)
       proof = proof.updateReferences("line", List("r1", "r2")).getOrElse(???)
 
@@ -234,14 +234,14 @@ class ProofImplTest extends AnyFunSpec {
     }
 
     it("should report when updating nonexistant line") {
-      val proof: Pf = ProofImpl.empty
+      val proof: Pf = OptionalProof.empty
       proof.updateReferences("line", List("r1", "r2")) should matchPattern {
         case Left(CannotUpdateStep("line", _)) =>
       }
     }
 
     it("should report when attempting to update box") {
-      var proof: Pf = ProofImpl.empty
+      var proof: Pf = OptionalProof.empty
       proof = proof.addBox("box", ProofTop).getOrElse(???)
       proof.updateReferences("box", List("r1", "r2")) should matchPattern {
         case Left(CannotUpdateStep("box", _)) =>
@@ -251,14 +251,14 @@ class ProofImplTest extends AnyFunSpec {
 
   describe("ProofImpl::removeStep") {
     it("should reject when removing line that doesn't exist") {
-      var proof: Pf = ProofImpl.empty
+      var proof: Pf = OptionalProof.empty
       proof.removeStep("id") should matchPattern {
         case Left(CannotRemoveStep("id", _)) =>
       }
     }
 
     it("should correctly remove added line") {
-      var proof: Pf = ProofImpl.empty
+      var proof: Pf = OptionalProof.empty
       proof = proof.addLine("line", ProofTop).getOrElse(???)
       proof = proof.removeStep("line").getOrElse(???)
       proof.getStep("line") should matchPattern {
@@ -267,7 +267,7 @@ class ProofImplTest extends AnyFunSpec {
     }
 
     it("should correctly remove box within box") {
-      var proof: Pf = ProofImpl.empty
+      var proof: Pf = OptionalProof.empty
       proof = proof.addBox("b1", ProofTop).getOrElse(???)
       proof = proof.addBox("b2", BoxTop("b1")).getOrElse(???)
       proof = proof.removeStep("b2").getOrElse(???)
@@ -278,7 +278,7 @@ class ProofImplTest extends AnyFunSpec {
     }
 
     it("should delete inner line when box is destroyed") {
-      var proof: Pf = ProofImpl.empty
+      var proof: Pf = OptionalProof.empty
       proof = proof.addBox("box", ProofTop).getOrElse(???)
       proof = proof.addLine("line", BoxTop("box")).getOrElse(???)
       proof = proof.removeStep("box").getOrElse(???)
