@@ -2,25 +2,12 @@ package logicbox.marshal
 
 import spray.json._
 import logicbox.proof.PLRule
-import logicbox.proof.PLRule.NullRule
-import logicbox.proof.PLRule.AndElim
-import logicbox.proof.PLRule.AndIntro
-import logicbox.proof.PLRule.OrIntro
-import logicbox.proof.PLRule.OrElim
-import logicbox.proof.PLRule.ImplicationIntro
-import logicbox.proof.PLRule.ImplicationElim
-import logicbox.proof.PLRule.NotIntro
-import logicbox.proof.PLRule.NotElim
-import logicbox.proof.PLRule.ContradictionElim
-import logicbox.proof.PLRule.NotNotElim
-import logicbox.proof.PLRule.ModusTollens
-import logicbox.proof.PLRule.NotNotIntro
-import logicbox.proof.PLRule.ProofByContradiction
-import logicbox.proof.PLRule.LawOfExcludedMiddle
-import logicbox.proof.PLRule.Copy
+import logicbox.proof.PLRule._
 
 class PLRuleWriter extends JsonWriter[PLRule] {
   private def toStr(rule: PLRule): String = rule match {
+    case Assumption() => "assumption"
+    case Premise() => "premise"
     case AndElim(side) => s"and_elim_${if (side == PLRule.Side.Left) then 0 else 1}"
     case AndIntro() => "and_intro"
     case OrIntro(side) => s"or_intro_${if (side == PLRule.Side.Left) then 0 else 1}"
@@ -36,7 +23,6 @@ class PLRuleWriter extends JsonWriter[PLRule] {
     case ProofByContradiction() => "proof_by_contradiction"
     case LawOfExcludedMiddle() => "law_of_excluded_middle"
     case Copy() => "copy"
-    case _: NullRule => assert(false, s"got raw NullRule")
   }
 
   override def write(rule: PLRule): JsValue = JsString(toStr(rule))

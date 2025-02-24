@@ -74,7 +74,7 @@ object PLRule {
     }
   }
 
-  abstract class NullRule extends PLRule {
+  sealed abstract class NullRule extends PLRule {
     def check(formula: PLFormula, refs: List[Ref]): List[Viol] = Nil
   }
 

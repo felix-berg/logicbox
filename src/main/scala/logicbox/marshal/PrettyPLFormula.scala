@@ -26,7 +26,7 @@ object PrettyPLFormula {
       case Atom(c) => c.toString
       case And(phi, psi) => s"${b(phi)} \\land ${b(psi)}"
       case Or(phi, psi) => s"${b(phi)} \\lor ${b(psi)}"
-      case Implies(phi, psi) => s"${b(phi)} \\implies ${b(psi)}"
+      case Implies(phi, psi) => s"${b(phi)} \\rightarrow ${b(psi)}"
       case Not(phi) => s"\\lnot ${b(phi)}"
     }
   }
