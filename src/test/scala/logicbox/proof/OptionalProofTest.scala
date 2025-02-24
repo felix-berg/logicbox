@@ -15,7 +15,7 @@ class OptionalProofTest extends AnyFunSpec {
 
   type Pf = ModifiableProof[Option[StubFormula], Option[StubRule], Option[StubBoxInfo], Id]
 
-  describe("ProofImplTest::addLine") {
+  describe("OptionalProof::addLine") {
     it("should add empty line to empty proof") {
       val proof: Pf = OptionalProof.empty
       proof.addLine("id", ProofTop) match {
@@ -109,7 +109,7 @@ class OptionalProofTest extends AnyFunSpec {
     }
   }
 
-  describe("ProofImpl::addBox") {
+  describe("OptionalProof::addBox") {
     it("should allow adding empty box to proof") {
       var proof: Pf = OptionalProof.empty
       proof = proof.addBox("box", ProofTop).getOrElse(???)
@@ -168,7 +168,7 @@ class OptionalProofTest extends AnyFunSpec {
     }
   }
 
-  describe("ProofImpl::updateFormula") {
+  describe("OptionalProof::updateFormula") {
     it("should update formula correctly") {
       var proof: Pf = OptionalProof.empty
       proof = proof.addLine("line", ProofTop).getOrElse(???)
@@ -195,7 +195,7 @@ class OptionalProofTest extends AnyFunSpec {
     }
   }
 
-  describe("ProofImpl::updateRule") {
+  describe("OptionalProof::updateRule") {
     it("should update rule correctly") {
       var proof: Pf = OptionalProof.empty
       proof = proof.addLine("line", ProofTop).getOrElse(???)
@@ -222,7 +222,7 @@ class OptionalProofTest extends AnyFunSpec {
     }
   }
 
-  describe("ProofImpl::updateReferences") {
+  describe("OptionalProof::updateReferences") {
     it("should update references correctly") {
       var proof: Pf = OptionalProof.empty
       proof = proof.addLine("line", ProofTop).getOrElse(???)
@@ -249,7 +249,7 @@ class OptionalProofTest extends AnyFunSpec {
     }
   }
 
-  describe("ProofImpl::removeStep") {
+  describe("OptionalProof::removeStep") {
     it("should reject when removing line that doesn't exist") {
       var proof: Pf = OptionalProof.empty
       proof.removeStep("id") should matchPattern {
