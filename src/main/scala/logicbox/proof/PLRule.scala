@@ -31,7 +31,7 @@ object PLRule {
 
       val result = zp.map {
         // matches
-        case (_, BoxOrFormula.Formula, f: Line[PLFormula]) => Right(f)
+        case (_, BoxOrFormula.Formula, f: Line[PLFormula] @unchecked) => Right(f)
         case (_, BoxOrFormula.Box, b: Box[PLFormula, PLBoxInfo]) => Right(b)
 
         // violations
@@ -198,7 +198,7 @@ object PLRule {
 
       extractAndThen(refs, pattern)  {
         case List(
-          Reference.Line[PLFormula](r0),
+          Reference.Line(r0: PLFormula),
           b1: Reference.Box[PLFormula, _] @unchecked,
           b2: Reference.Box[PLFormula, _] @unchecked
         ) =>
