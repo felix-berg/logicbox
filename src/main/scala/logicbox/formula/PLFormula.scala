@@ -1,19 +1,6 @@
 package logicbox.formula
 
-sealed abstract class PLFormula {
-  import PLFormula.*
-
-  override def toString: String = this match {
-    case Contradiction() => "⊥"
-    case Tautology() => "⊤"
-    case Atom(c) => c.toString
-    case And(phi, psi) => s"($phi ∧ $psi)"
-    case Or(phi, psi) => s"($phi ∨ $psi)"
-    case Implies(phi, psi) => s"($phi -> $psi)"
-    case Not(Atom(c)) => s"¬$c" // convenience
-    case Not(phi) => s"¬($phi)"
-  }
-}
+sealed abstract class PLFormula
 
 object PLFormula {
   case class Contradiction() extends PLFormula
