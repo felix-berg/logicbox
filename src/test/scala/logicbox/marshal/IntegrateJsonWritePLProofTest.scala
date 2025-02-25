@@ -13,7 +13,7 @@ import logicbox.framework.ModifiableProof.ProofTop
 import logicbox.formula.PLFormula.Contradiction
 
 
-class IntegratePLProofTest extends AnyFunSpec {
+class IntegrateJsonWritePLProofTest extends AnyFunSpec {
   private type F = IncompleteFormula[PLFormula]
   private type R = Option[PLRule]
   private type B = PLBoxInfo
