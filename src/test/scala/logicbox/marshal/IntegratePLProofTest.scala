@@ -19,31 +19,10 @@ class IntegratePLProofTest extends AnyFunSpec {
   private type B = PLBoxInfo
   private type Id = String
 
-  case class LineImpl(formula: F, rule: R, refs: Seq[Id]) extends Proof.Line[F, R, Id]
-  case class BoxImpl(info: B, steps: Seq[Id]) extends Proof.Box[B, Id]
-
-  case object StepStrategy extends ProofStepStrategy[F, R, B, Id] {
-    import Proof._
-    override def createEmptyBox: Box[B, Id] = BoxImpl((), Seq.empty)
-
-    override def createEmptyLine: Line[F, R, Id] = LineImpl(IncompleteFormula("", None), None, Seq.empty)
-
-    override def updateRefs(line: Line[F, R, Id], refs: Seq[Id]): Line[F, R, Id] = 
-      LineImpl(line.formula, line.rule, refs)
-
-    override def updateFormula(line: Line[F, R, Id], formula: F): Line[F, R, Id] =
-      LineImpl(formula, line.rule, line.refs)
-
-    override def updateRule(line: Line[F, R, Id], rule: R): Line[F, R, Id] =
-      LineImpl(line.formula, rule, line.refs)
-
-    override def updateBoxInfo(box: Box[B, Id], info: B): Box[B, Id] = 
-      BoxImpl(info, box.steps)
-
-    override def updateBoxSteps(box: Box[B, Id], steps: Seq[Id]): Box[B, Id] =
-      BoxImpl(box.info, steps)
-  }
-
+  val stepStrategy: ProofStepStrategy[F, R, B, Id] = StandardStepStrategy(
+    ProofLineImpl(IncompleteFormula("", None), None, Seq()),
+    ProofBoxImpl((), Seq())
+  )
 
   val idWriter = JsonWriter.func2Writer { (id: Id) => JsString(id) }
 
@@ -65,7 +44,7 @@ class IntegratePLProofTest extends AnyFunSpec {
     )
 
     it("should correctly write single line proof") {
-      var proof: ModifiableProof[F, R, B, Id] = ProofImpl.empty(StepStrategy)
+      var proof: ModifiableProof[F, R, B, Id] = ProofImpl.empty(stepStrategy)
 
       proof = proof.addLine("l1", ProofTop).getOrElse(???)
 
@@ -101,7 +80,7 @@ class IntegratePLProofTest extends AnyFunSpec {
       // 6: p implies s   NONE box
       
       import ModifiableProof._
-      var proof: ModifiableProof[F, R, B, Id] = ProofImpl.empty(StepStrategy)
+      var proof: ModifiableProof[F, R, B, Id] = ProofImpl.empty(stepStrategy)
       def line(id: Id, pos: ModifiableProof.Pos[Id], f: String, rule: Option[PLRule], refs: Seq[Id]): Unit = {
         proof = proof.addLine(id, pos).getOrElse(???)
         val optF = try {

@@ -18,8 +18,8 @@ class PrettyPLFormulaTest extends AnyFunSpec {
 
     it("should add brackets on binary operations") {
       asLaTeX(And(And(Atom('p'), Atom('q')), Atom('r'))) shouldBe "(p \\land q) \\land r"
-      asLaTeX(Implies(Atom('r'), Or(Atom('p'), Atom('q')))) shouldBe "r \\implies (p \\lor q)"
-      asLaTeX(Or(Atom('r'), Implies(Atom('p'), Atom('q')))) shouldBe "r \\lor (p \\implies q)"
+      asLaTeX(Implies(Atom('r'), Or(Atom('p'), Atom('q')))) shouldBe "r \\rightarrow (p \\lor q)"
+      asLaTeX(Or(Atom('r'), Implies(Atom('p'), Atom('q')))) shouldBe "r \\lor (p \\rightarrow q)"
     }
     
     it("should not add brackets on not") {
