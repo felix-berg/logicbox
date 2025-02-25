@@ -90,7 +90,7 @@ class IntegratePLProofTest extends AnyFunSpec {
       proof = proof.updateRule("l1", Some(PLRule.AndIntro())).getOrElse(???)
     }
 
-    it("should correctly write small proof") {
+    it("should correctly json write small proof") {
       // 1:             prem.
       // 2: q -> s      NONE
       // ---- box -----------
