@@ -8,6 +8,11 @@ lazy val app = project.in(file("."))
       // unit testing library
       "org.scalatest" %% "scalatest" % "3.2.19" % Test,
       // for JSON marshalling/unmarshalling
-      "io.spray" %%  "spray-json" % "1.3.6"
+      "io.spray" %%  "spray-json" % "1.3.6",
+
+      // HTTP
+      "dev.zio"       %% "zio"            % "2.0.19",
+      "dev.zio"       %% "zio-http"       % "3.0.1"
     )
   )
+
