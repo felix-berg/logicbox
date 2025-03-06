@@ -51,6 +51,7 @@ class IntegrateVerifyPLProofTest extends AnyFunSpec {
         proof = proof.updateReferences(id, refs).getOrElse(???)
       }
 
+      val bef = System.currentTimeMillis()
       line("1", ProofTop, "p -> q", Some(PLRule.Premise()), Seq())
       line("2", AtLine("1", Direction.Below), "q -> s", None, Seq())
 
@@ -77,6 +78,8 @@ class IntegrateVerifyPLProofTest extends AnyFunSpec {
 
       val scopedResult = scopedChecker.check(proof)
       val ruleBasedResult = ruleBasedProofChecker.check(optProofView)
+      val aft = System.currentTimeMillis()
+      println(s"Took ${aft - bef} ms")
 
       scopedResult.foreach(println)
       ruleBasedResult.foreach(println)
